@@ -1,0 +1,156 @@
+function cv_result = NLLCrossValidate(data, errBins, K, nPerm)
+
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/OptimizationUtils/')
+
+if nargin < 3
+    K = 5;
+    nPerm = 6;
+end
+
+% Cross-validation
+trlData   = convertToTrialData(data);
+grpOriErr = trlData.grpOriErr;
+N         = numel(grpOriErr(:));
+
+% For each fold save nll test and train data
+resultsListCov = cell(nPerm*K,1);
+resultsListInd = cell(nPerm*K,1);
+foldIDs        = cell(nPerm,1);
+perms          = cell(nPerm,1);
+
+% Run k-fold cross-validation
+for h=1:nPerm
+    perm = randperm(N);
+    foldID = mod(perm-1, K) + 1;
+    
+    foldIDs{h} = foldID;
+    perms{h}   = perm;
+    
+    for k = 1:K
+        disp("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        fprintf( 'cross validation itr: %d \n', K*(h-1) + k) 
+        disp("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        
+        % ---- Split trials ----
+        testIdx  = (foldID == k);
+        trainIdx = ~testIdx;
+        
+        % Run multi-start optimization for cov model
+        results = Optimize(data, errBins, "cov", trainIdx);
+        resultsListCov{K*(h-1) + k} = results;
+        
+        % Run multi-start optimization for ind model
+        results = Optimize(data, errBins, "ind", trainIdx);
+        resultsListInd{K*(h-1) + k} = results;
+        
+        % Should i pick the max p-val? or something else like mode? Look at
+        % distribution maybe and then decide.
+    end
+end
+
+Data.resultsListCov = resultsListCov;
+Data.resultsListInd = resultsListInd;
+Data.perms          = perms;
+Data.foldIDs        = foldIDs;
+
+cv_result = Data;
+
+end
+
+function nllData = computeNLL(data, errBins, cv_data)
+
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/OptimizationUtils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Utils/')
+
+% Exp data
+trlData              = convertToTrialData(data);
+n_uncertainty_levels = trlData.n_uncertainty_levels;
+trlErrors            = trlData.trlErrors;
+trlConfReports       = trlData.trlConfReports;
+trlUncertaintyLevels = trlData.trlUncertaintyLevels;
+
+
+% CV params
+nPerm   = numel( cv_data.foldIDs );
+K       = numel( cv_data.resultsListCov ) / nPerm;
+% n       = numel( cv_data.resultsListCov );
+% itr     = numel( cv_data.resultsListCov{n}.f );
+
+foldIDs = cv_data.foldIDs;
+
+nllCovModel = []; %zeros(K*nPerm, 1);
+nllIndModel = []; %zeros(K*nPerm, 1);
+deltaNLL    = []; %zeros(K*nPerm, 1); % ind - cov
+
+fvalsCov = []; % zeros(K*nPerm*30, 1);
+fvalsInd = []; % zeros(K*nPerm*30, 1);
+
+minfvalsCov = []; %zeros(K*nPerm, 1);
+minfvalsInd = []; %zeros(K*nPerm, 1);
+
+for h=1:nPerm
+    foldID = foldIDs{h};
+    
+    for k = 1:K
+        disp(K*(h-1) + k)
+
+        % ---- Split trials ----
+        testIdx  = (foldID == k);
+        
+        % build binned data for train dataset
+        binnedData = buildBinnedData( ...
+            n_uncertainty_levels, ...
+            errBins, ...
+            trlErrors(testIdx), ...
+            trlConfReports(testIdx), ...
+            trlUncertaintyLevels(testIdx));
+        
+        metaData.n_levels      = n_uncertainty_levels;
+        metaData.errBins       = errBins;
+        metaData.binned_err_LC = binnedData.binned_err_LC;
+        metaData.binned_err_HC = binnedData.binned_err_HC;
+        
+        % Cov model
+        fvalsCovModel     = cv_data.resultsListCov{K*(h-1) + k}.f;
+        fitParamsCovModel = cv_data.resultsListCov{K*(h-1) + k}.x;
+        [val, idx]        = min(fvalsCovModel);
+        params            = fitParamsCovModel(idx, :);
+        nllCov            = computeNLLCov(params, metaData);
+
+        minfvalsCov = [minfvalsCov val];
+        nllCovModel = [nllCovModel nllCov];
+        fvalsCov    = [fvalsCov fvalsCovModel];
+        % minfvalsCov(K*(h-1) + k) = val;
+        % nllCovModel(K*(h-1) + k) = nllCov;
+        % fvalsCov( ( ( K*(h-1) + k - 1)*itr + 1) : (K*(h-1) + k)*itr ) = fvalsCovModel;
+        
+        % ind model
+        fvalsIndModel     = cv_data.resultsListInd{K*(h-1) + k}.f;
+        fitParamsIndModel = cv_data.resultsListInd{K*(h-1) + k}.x;
+        [val, idx]        = min(fvalsIndModel);
+        params            = fitParamsIndModel(idx, :);
+        nllInd            = computeNLL(params, metaData);
+        
+        minfvalsInd = [minfvalsInd val];
+        nllIndModel = [nllIndModel nllInd];
+        fvalsInd    = [fvalsInd fvalsIndModel];
+        % minfvalsInd(K*(h-1) + k) = val;
+        % nllIndModel(K*(h-1) + k) = nllInd;
+        % fvalsInd( ( (K*(h-1) + k - 1)*itr + 1) : (K*(h-1) + k)*itr ) = fvalsIndModel;
+        
+        deltaNLL = [deltaNLL (nllCov - nllInd)];
+        % deltaNLL(K*(h-1) + k) = nllCov - nllInd; % negative value better for cov data - this is better
+    end
+end
+
+nllData.nllCovModel  = nllCovModel;
+nllData.nllIndModel  = nllIndModel;
+nllData.deltaNLL     = deltaNLL;
+
+nllData.fvalsCov     = fvalsCov;
+nllData.fvalsInd     = fvalsInd;
+
+nllData.minfvalsCov  = minfvalsCov;
+nllData.minfvalsInd  = minfvalsInd;
+
+end
