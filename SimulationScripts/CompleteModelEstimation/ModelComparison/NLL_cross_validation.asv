@@ -13,6 +13,7 @@ modelData.data.confidence_report_all = modelData.data.confReport;
 %% Cross-validate
 errBins   = -90:0.1:90;
 cv_result = NLLCrossValidate(modelData.data, errBins);
+%%
 save('./CV_Data/cross_validation_cov_model.mat', 'cv_result');
 
 %% NLL on test data

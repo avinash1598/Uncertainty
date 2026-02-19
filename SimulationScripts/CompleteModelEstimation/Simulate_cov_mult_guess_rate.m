@@ -7,13 +7,13 @@
 clear all
 close all
 
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\Utils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\OptimizationUtils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\PlotUtils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\LLScriptsUtils\')
 
 orientations     = 0:15:175; %linspace(0, 180, 18); %0:10:180; % linspace(0, 180, 18);
-ntrials_per_ori  = 250; %250;
+ntrials_per_ori  = 25; %250;
 b                = linspace(1, 2.2, 6); % linspace(1, 2.2, 8); Note: different minimum noise level (0.1). Choose b such that average noise level ranges from low to high (relative to internal noise level)
 a                = 0.67.*b; %0.67.*b;   % Does a depend upon b? Yes
 biasAmp          = 0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
@@ -114,7 +114,7 @@ data.params.scale                 = scale;
 data.params.sigma_meta            = sigma_meta;
 data.params.Cc                    = Cc;
 
-% save('modelContOriData_cov.mat', "data")
+save('modelContOriData_cov.mat', "data")
 
 
 %% Get analytical solution
@@ -265,4 +265,3 @@ xlabel("\sigma_s(s) (sensory noise)")
 ylabel("MAD (measurement)")
 legend
 hold off
-
