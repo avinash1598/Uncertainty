@@ -13,19 +13,28 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Utils/')
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/OptimizationUtils/')
 
 orientations     = 0:15:175; %linspace(0, 180, 18); %0:10:180; % linspace(0, 180, 18);
-ntrials_per_ori  = 25; %250;
-b                = 10*linspace(1, 2, 6); % linspace(1, 2.2, 8); Note: different minimum noise level (0.1). Choose b such that average noise level ranges from low to high (relative to internal noise level)
-a                = 0*0.67.*b; %0.67.*b;   % Does a depend upon b? Yes
-biasAmp          = 0;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
-scale            = 100; %0.5;
-sigma_meta       = 20;
-Cc               = 0.05; 
+ntrials_per_ori  = 250; %250;
+b                = linspace(1, 2.2, 6); % linspace(1, 2.2, 8); Note: different minimum noise level (0.1). Choose b such that average noise level ranges from low to high (relative to internal noise level)
+a                = 0.67.*b; %0.67.*b;   % Does a depend upon b? Yes
+biasAmp          = 0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
+scale            = 0.5; %0.5;
+sigma_meta       = 0.6;
+Cc               = 0.5; 
+
+% orientations     = 0:15:175; %linspace(0, 180, 18); %0:10:180; % linspace(0, 180, 18);
+% ntrials_per_ori  = 25; %250;
+% b                = 10*linspace(1, 2, 6); % linspace(1, 2.2, 8); Note: different minimum noise level (0.1). Choose b such that average noise level ranges from low to high (relative to internal noise level)
+% a                = 0*0.67.*b; %0.67.*b;   % Does a depend upon b? Yes
+% biasAmp          = 0;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
+% scale            = 100; %0.5;
+% sigma_meta       = 20;
+% Cc               = 0.05; 
 
 % biasAmp          = 0;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
 % scale            = 343.3225;
 % sigma_meta       = 10.83;
 % Cc               = 0.05; 
-guessRate        = 0.1; %0.1; % While fitting try keeping it below 0.1 % For each trial with this prob sample uniformly from 0 to 179
+guessRate        = 0; %0.1; % While fitting try keeping it below 0.1 % For each trial with this prob sample uniformly from 0 to 179
 
 % In actual data correct for bias
 
@@ -119,7 +128,7 @@ data.params.Cc                    = Cc;
 % save('modelContOriData_cov.mat', "data")
 
 %% Optimize
-errBins = -90:3:90;
+errBins = -90:0.1:90;
 result = Optimize(data, errBins, "cov");
 
 opt_param_sigma_s        = result.x(1:n_uncertainty_levels);

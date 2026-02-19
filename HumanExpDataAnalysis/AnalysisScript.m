@@ -2,11 +2,12 @@ restoredefaultpath
 close all
 clear all
 
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/HumanExpDataAnalysis/Scripts/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
 
-data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/Data/COR31.mat'); % Tien
+data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR31.mat'); % Tien
+% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR33.mat'); % Akash
+
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/Data/COR32.mat'); % Jiaming
-% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/Data/COR33.mat');   % Akash
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/ExpScript/CORNFB01.mat');   % Yichao
 
 % formattedData = formatExpData(data);
@@ -1058,6 +1059,39 @@ for i = 1:2
 end
 
 
+%% Bias and orientation dependent std dev
+bias = formattedData.bias;
+orientations = formattedData.orientations;
+
+figure
+plot(orientations, bias)
+xlabel("Orientation")
+ylabel("Mean error")
+title("Orientation bias")
+
+
+figure
+
+stdByOri = formattedData.stdByOri;
+madByOri = formattedData.madByOri;
+
+for i = 1:n_uncertainty_levels
+    subplot(1, 2, 1)
+    hold on
+    plot(orientations, stdByOri(i, :), LineWidth=1.5, DisplayName=""+i)
+    xlabel("Orientation")
+    ylabel("Std dev")
+    legend
+    hold off
+    
+    subplot(1, 2, 2)
+    hold on
+    plot(orientations, madByOri(i, :), LineWidth=1.5, DisplayName=""+i)
+    xlabel("Orientation")
+    ylabel("MAD")
+    legend
+    hold off
+end
 
 
 % %% Stats split by orientation
@@ -1127,26 +1161,3 @@ end
 % 
 
 
-%% Extract groups
-
-x = formattedData.uncertaintyVals;
-% Size 3: contrast, spread, duration
-
-for i = 1:3
-    vals = x(:, i);
-
-    [uniqVals, ~, idx] = unique(vals);  
-    counts = accumarray(idx, 1);         
-    
-    indsUnique = find(counts == 4); % Find which unique values occur 4 times
-
-    if numel(indsUnique) > 0
-        valuesOccur4 = uniqVals(indsUnique); % Get the actual values that occur 4 times
-        
-        % Get all indices in vals where those values occur
-        indicesInVals = vals == valuesOccur4; %find(ismember(vals, valuesOccur4));
-    
-        x(indicesInVals, :, :)
-    end
-
-end

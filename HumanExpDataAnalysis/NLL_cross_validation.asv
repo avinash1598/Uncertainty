@@ -19,7 +19,7 @@ formattedData = formatExpData(f, false, false); % no de-baising, work with raw e
 %% Cross-validate
 errBins   = -90:1:90; % this is dx which might affect fitting. This value should be optimal. not too fine. not too coarse.
 cv_result = NLLCrossValidate(formattedData, errBins);
-save('./CV_Data/cross_validation_akash.mat', 'cv_result');
+save('./CV_Data/cross_validation_akash.mat', 'Data');
 
 %% NLL on test data
 nllData = computeNLL_CV(formattedData, errBins, cv_result);
@@ -46,8 +46,8 @@ title("Fit on test data (GT: cov model data)")
 subplot(2, 2, 3)
 hold on
 bins = 0:30:300;
-histogram(nllData.fvalsCov/100, DisplayName='cov model')
-histogram(nllData.fvalsInd/100, DisplayName='ind model')
+histogram(nllData.fvalsCov/100, bins, DisplayName='cov model')
+histogram(nllData.fvalsInd/100, bins, DisplayName='ind model')
 hold off
 ylabel("Count")
 xlabel("NLL")
@@ -57,10 +57,12 @@ title("fvals (train dataset)")
 subplot(2, 2, 4)
 hold on
 bins = 0:30:300;
-histogram(nllData.minfvalsCov/100, DisplayName='cov model')
-histogram(nllData.minfvalsInd/100, DisplayName='ind model')
+histogram(nllData.minfvalsCov/100, bins, DisplayName='cov model')
+histogram(nllData.minfvalsInd/100, bins, DisplayName='ind model')
 hold off
 ylabel("Count")
 xlabel("NLL")
 legend
 title("bestfit fvals (train dataset)")
+
+

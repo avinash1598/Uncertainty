@@ -21,10 +21,12 @@ rawOriError_S = mod(rawOriError_S + 90, 180) - 90;
 % Error wrt actual orientation
 rawOriError = data.dat.rawOriError;
 
+% Estiamte orientation dependent bias
+stimSummary = groupsummary(data.dat, {'stimOri'}, {'mean', 'std'}, 'rawOriError');
+bias        = stimSummary.mean_rawOriError;
+
 if debias
     % debias
-    stimSummary = groupsummary(data.dat, {'stimOri'}, {'mean', 'std'}, 'rawOriError');
-    bias     = stimSummary.mean_rawOriError;
     stimVals = stimSummary.stimOri;
     
     % Error wrt to stim ori
@@ -87,6 +89,17 @@ stim_contrast_all     = zeros(n_uncertainty_levels, n_orientations, nTrials);
 stim_dispersion_all   = zeros(n_uncertainty_levels, n_orientations, nTrials);
 stim_dur_all          = zeros(n_uncertainty_levels, n_orientations, nTrials);
 
+% Orientation dependent std
+stimSummary = groupsummary(data.dat, {'stimContrast', 'stimSpread', 'stimDur', 'stimOri'}, ...
+    {'mean', 'std', @(x) mad(x,1), 'numel'}, 'rawOriError');
+stdByOri        = reshape( stimSummary.std_rawOriError, [numel(stimSummary.std_rawOriError)/n_uncertainty_levels n_uncertainty_levels]);
+madByOri        = reshape( stimSummary.fun1_rawOriError, [numel(stimSummary.fun1_rawOriError)/n_uncertainty_levels n_uncertainty_levels]); 
+stdByOri        = stdByOri';
+madByOri        = madByOri';
+
+stdByOri        = stdByOri(sidx, :);
+madByOri        = madByOri(sidx, :);
+
 for i=1:n_uncertainty_levels
     for j = 1:n_orientations
         
@@ -127,6 +140,10 @@ retData.resp_err_all          = resp_err_all;
 retData.theta_true_all_S      = theta_true_all_S;
 retData.resp_err_all_S        = resp_err_all_S;
 retData.resp_err_all_S        = resp_err_all_S;
+retData.bias                  = bias;
+retData.stdByOri              = stdByOri;
+retData.madByOri              = madByOri;
+retData.orientations          = orientations;
 
 retData.stim_contrast_all     = stim_contrast_all;
 retData.stim_dispersion_all   = stim_dispersion_all;

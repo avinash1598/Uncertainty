@@ -2,8 +2,8 @@ function result = Optimize(data, errBins, modelType, fltTrlIdx)
 
     assert(modelType == "cov" || modelType == "ind")
 
-    addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/LLScriptsUtils/')
-    addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Utils/')
+    addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
+    addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
     
     trlData              = convertToTrialData(data);
     grpOriErr            = trlData.grpOriErr;
@@ -12,6 +12,11 @@ function result = Optimize(data, errBins, modelType, fltTrlIdx)
     trlConfReports       = trlData.trlConfReports;
     trlUncertaintyLevels = trlData.trlUncertaintyLevels;
 
+    warning("This is not computed on filtered data")
+    y_mad      = trlData.y_mad;
+    y_HC_mad   = trlData.y_HC_mad;
+    y_LC_mad   = trlData.y_LC_mad;
+    
     if nargin > 3 && ~isempty(fltTrlIdx)
         trlErrors            = trlErrors(fltTrlIdx);
         trlConfReports       = trlConfReports(fltTrlIdx);
@@ -29,6 +34,9 @@ function result = Optimize(data, errBins, modelType, fltTrlIdx)
     metaData.errBins       = errBins;
     metaData.binned_err_HC = binnedData.binned_err_HC;
     metaData.binned_err_LC = binnedData.binned_err_LC;
+    metaData.targetMADs    = y_mad;
+    metaData.targetMADs_HC = y_HC_mad;
+    metaData.targetMADS_LC = y_LC_mad;
     
     % Run multi-start optimization for cov model
     result = multiStartFit(grpOriErr, n_uncertainty_levels, metaData, modelType);
@@ -36,49 +44,11 @@ function result = Optimize(data, errBins, modelType, fltTrlIdx)
 end
 
 %% Fucntions
-function binnedData = buildBinnedData(n_levels, errBins, trlErrs, trlConfReports, trlUncertaintyLevels)
-
-% Get PDFs from data for HC and LC
-binned_err_LC = zeros( n_levels, numel(errBins) );
-binned_err_HC = zeros( n_levels, numel(errBins) );
-
-for i=1:n_levels
-    
-    fltIdx = trlUncertaintyLevels == i;
-
-    cR = trlConfReports(fltIdx);
-    fltErr = trlErrs(fltIdx);
-
-    dataHC = fltErr(cR == 1);
-    dataLC = fltErr(cR == 0);
-    
-    centers = errBins;
-    binWidth = mean(diff(centers));
-    edges = [centers - binWidth/2, centers(end) + binWidth/2];
-    
-    [countHC, ~] = histcounts(dataHC, ...
-        'Normalization', 'count', ...
-        'BinEdges', edges);
-
-    [countLC, ~] = histcounts(dataLC, ...
-        'Normalization', 'count', ...
-        'BinEdges', edges);
-    
-    binned_err_LC(i, :) = countLC;
-    binned_err_HC(i, :) = countHC;
-    
-end
-
-binnedData.binned_err_LC = binned_err_LC;
-binnedData.binned_err_HC = binned_err_HC;
-
-end
-
 % function to perform optimization (do with multistart option)
 function results = multiStartFit(grpOriErr, n_uncertainty_levels, metaData, model)
 % model: cov, ind
 
-nStarts = 1; %30;
+nStarts = 10; %30;
 
 if model == "cov"
     nParams = n_uncertainty_levels + 4;
@@ -98,7 +68,7 @@ for itr = 1:nStarts
     
     while ~success
         try 
-
+            
             param_sigma_s        = std(grpOriErr, [], 2)';  % Choose b such that average noise level ranges from low to high (relative to internal noise level)
             param_scale          = rand;
             param_sigma_meta     = rand;
@@ -124,7 +94,7 @@ for itr = 1:nStarts
             ub(end) = 0.1; % Upper bound for last parameter i.e. guessrate
             
             warning('off','all')
-
+            
             options = optimoptions('fmincon', ...
                 'Display', 'iter', ...
                 'Algorithm', 'sqp', ...          
@@ -152,7 +122,7 @@ for itr = 1:nStarts
             success = true;
 
         catch ME
-            % disp(ME)
+            disp(ME)
         end
     end
 
@@ -164,100 +134,4 @@ results.f = f_all;
 % First verify and then later pick the minimum nll
 end
 
-% Loss function for optimization
-function nll = computeNLLCov(params, metaData)
 
-nLevels = metaData.n_levels;
-
-% Params
-param_sigma_s        = params(1:nLevels);
-param_scale          = params(nLevels + 1);
-param_sigma_meta     = params(nLevels + 2);
-param_Cc             = params(nLevels + 3);
-param_guessrate      = params(nLevels + 4);
-
-% Metadata
-errBins        = metaData.errBins;
-binned_err_HC  = metaData.binned_err_HC;
-binned_err_LC  = metaData.binned_err_LC;
-
-currPdfFit_HC = zeros(nLevels, numel(errBins));
-currPdfFit_LC = zeros(nLevels, numel(errBins));
-curr_pHC       = zeros(nLevels, 1);
-curr_pLC       = zeros(nLevels, 1);
-
-for i=1:nLevels
-    
-    modelParams.sigma_s             = param_sigma_s(i);
-    modelParams.scale               = param_scale;
-    modelParams.Cc                  = param_Cc;
-    modelParams.sigma_meta          = param_sigma_meta;
-    modelParams.guessRate           = param_guessrate;
-    
-    retData = getEstimationsPDF_cov_reduced(errBins, modelParams, true);
-    
-    % Data for NLL
-    currPdfFit_HC(i, :) = retData.analyticalPDF_HC;
-    currPdfFit_LC(i, :) = retData.analyticalPDF_LC;
-    curr_pHC(i)         = retData.pHC;
-    curr_pLC(i)         = retData.pLC;
-    
-end
-
-% NLL loss
-ll_HC = binned_err_HC .* log( currPdfFit_HC.*curr_pHC + eps );
-ll_LC = binned_err_LC .* log( currPdfFit_LC.*curr_pLC + eps );
-
-nll = - ( sum(ll_HC(:)) + sum(ll_LC(:)) );
-
-end
-
-% Loss function for optimization
-function nll = computeNLL(params, metaData)
-
-nLevels = metaData.n_levels;
-
-% Params
-param_sigma_s        = params(1:nLevels);
-param_shape          = params(nLevels + 1);
-param_scale          = params(nLevels + 2);
-param_sigma_meta     = params(nLevels + 3);
-param_Cc             = params(nLevels + 4);
-param_guessrate      = params(nLevels + 5);
-
-% Metadata
-errBins        = metaData.errBins;
-binned_err_HC  = metaData.binned_err_HC;
-binned_err_LC  = metaData.binned_err_LC;
-
-currPdfFit_HC = zeros(nLevels, numel(errBins));
-currPdfFit_LC = zeros(nLevels, numel(errBins));
-curr_pHC       = zeros(nLevels, 1);
-curr_pLC       = zeros(nLevels, 1);
-
-for i=1:nLevels
-    
-    modelParams.sigma_s             = param_sigma_s(i);
-    modelParams.shape               = param_shape;   
-    modelParams.scale               = param_scale;
-    modelParams.Cc                  = param_Cc;
-    modelParams.sigma_meta          = param_sigma_meta;
-    modelParams.guessRate           = param_guessrate;
-    
-    retData = getEstimatesPDFs_reduced_model(errBins, modelParams, true);
-    
-    % Data for NLL
-    currPdfFit_HC(i, :) = retData.analyticalPDF_HC;
-    currPdfFit_LC(i, :) = retData.analyticalPDF_LC;
-    curr_pHC(i)         = retData.pHC;
-    curr_pLC(i)         = retData.pLC;
-    
-end
-
-% NLL loss
-ll_HC = binned_err_HC .* log( currPdfFit_HC.*curr_pHC + eps );
-ll_LC = binned_err_LC .* log( currPdfFit_LC.*curr_pLC + eps );
-
-nll = - ( sum(ll_HC(:)) + sum(ll_LC(:)) );
-
-end

@@ -1,6 +1,6 @@
 function plotFitResult_guessrate(data, modelParams, modelType)
 
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Scripts/CompleteModelEstimation/LL_scripts/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
 
 grpOriErr            = data.resp_err_all; 
 confReport           = data.confidence_report_all;
