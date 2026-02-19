@@ -124,6 +124,7 @@ data.params.biasAmp               = biasAmp;
 data.params.scale                 = scale;
 data.params.sigma_meta            = sigma_meta;
 data.params.Cc                    = Cc;
+data.params.guessRate             = guessRate;
 
 % save('modelContOriData_cov.mat', "data")
 

@@ -1,6 +1,6 @@
 function [retData] = getEstimatesPDFs(stimVals, rvOriErrs, modelParams)
 
-error("Deprecated")
+warning("Deprecated")
 
 % rvOriErrs - random variable for orientations errors over which
 % PDF/likelihood is computed.
@@ -24,7 +24,7 @@ gammaSamples = gaminv(linspace(1/internalNoiseSamplesCnt, 1 - 1/internalNoiseSam
     shapeParam, scaleParam);
 
 sigma_s_stim = b + a.*(abs(sind(2*stimOris))); %sigma_s_stim = sigma_s_stim';
-sigma_m_stim = sqrt( sigma_s_stim'.^2 + (gammaSamples).^2 ); % Measurement noise
+sigma_m_stim = sqrt( sigma_s_stim'.^2 + gammaSamples ); % Measurement noise
 
 % For each value of sigma_m_stim, find the probability of high
 % confidence and low confidence. These probabilitites are
@@ -99,20 +99,22 @@ retData.pHC  = 1 - mean_cdf_val;
 retData.pLC  = mean_cdf_val;
 
 % Expected sigma - LC and HC by stimulus orientation
-retData.E_sigma_m_stim_HC = sum(sigma_m_stim.*pHC_all, 2)./sum(pHC_all, 2);
-retData.E_sigma_m_stim_LC = sum(sigma_m_stim.*pLC_all, 2)./sum(pLC_all, 2);
+retData.E_sigma_m_stim_HC = sqrt( sum(sigma_m_stim.^2.*pHC_all, 2)./sum(pHC_all, 2) );
+retData.E_sigma_m_stim_LC = sqrt( sum(sigma_m_stim.^2.*pLC_all, 2)./sum(pLC_all, 2) );
 
 % Expected sigma - LC and HC - combined across all orientations
-retData.E_sigma_m_HC = sum(sigma_m_stim.*pHC_all, 'all')/sum(pHC_all, 'all');
-retData.E_sigma_m_LC = sum(sigma_m_stim.*pLC_all, 'all')/sum(pLC_all, 'all');
+retData.E_sigma_m_HC = sqrt( sum(sigma_m_stim.^2.*pHC_all, 'all')/sum(pHC_all, 'all') );
+retData.E_sigma_m_LC = sqrt( sum(sigma_m_stim.^2.*pLC_all, 'all')/sum(pLC_all, 'all') );
 
 % Expected sigma for each stimulus orientation - aggreagted by HC and LC:
 % Analytical solution
-retData.E_sigma_m_stim = sqrt( sigma_s_stim.^2 + scaleParam.^2 * (shapeParam * (shapeParam + 1)) );
+% retData.E_sigma_m_stim = sqrt( sigma_s_stim.^2 + scaleParam.^2 * (shapeParam * (shapeParam + 1)) );
+retData.E_sigma_m_stim = sqrt( sigma_s_stim.^2 + scaleParam * shapeParam );
 
 % Expected sigma for all perceptual reports
 % retData.E_sigma_m = sqrt( mean( sigma_s_stim.^2 ) + sigma_si.^2 * scaleParam.^2 * (shapeParam * (shapeParam + 1)) );
-retData.E_sigma_m = sqrt( mean( sigma_s_stim.^2 + scaleParam.^2 * (shapeParam * (shapeParam + 1)) ) );
+% retData.E_sigma_m = sqrt( mean( sigma_s_stim.^2 + scaleParam.^2 * (shapeParam * (shapeParam + 1)) ) );
+retData.E_sigma_m = sqrt( mean( sigma_s_stim.^2 + scaleParam * shapeParam ) );
 
 % Stimulus dependent bias
 % retData.bias = biasAmp*sind(4*stimOris);

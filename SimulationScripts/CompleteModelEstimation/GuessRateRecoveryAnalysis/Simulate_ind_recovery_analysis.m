@@ -118,6 +118,7 @@ data.params.shape                 = shape;
 data.params.scale                 = scale;
 data.params.sigma_meta            = sigma_meta;
 data.params.Cc                    = Cc;
+data.params.guessRate             = guessRate;
 
 %% Optimize
 errBins = -90:0.1:90;
@@ -166,7 +167,7 @@ for i=1:uncertainty_levels
 %     modelParams.Cc                  = Cc;
 %     modelParams.sigma_meta          = sigma_meta;
 %     modelParams.guessRate           = guessRate;
-
+    
     modelParams.sigma_s             = opt_param_sigma_s(i);
     modelParams.shape               = opt_param_shape;
     modelParams.scale               = opt_param_scale;

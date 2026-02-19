@@ -131,10 +131,9 @@ if ~optimizationFlag
     F = cumsum(pdf) * dx;
     if ~isnan(F(end))
         F = F / F(end);   % normalize
-%         median_idx = find(F >= 0.5, 1, 'first');
-%         median_val = x(median_idx);
-        median_val = interp1(F, x, 0.5);
-    
+        [Funiq, idx] = unique(F);
+        xuniq = x(idx);
+        median_val = interp1(Funiq, xuniq, 0.5);
         mad_fun = @(d) (interp1(x, F, median_val + d) - interp1(x, F, median_val - d)) - 0.5;
         
         d0 = (x(end) - x(1)) / 4; % initial guess for d
@@ -149,9 +148,9 @@ if ~optimizationFlag
     F = cumsum(pdfHC) * dx;
     if ~isnan(F(end))
         F = F / F(end);   % normalize
-%         median_idx = find(F >= 0.5, 1, 'first');
-%         median_val = x(median_idx);
-        median_val = interp1(F, x, 0.5);
+        [Funiq, idx] = unique(F);
+        xuniq = x(idx);
+        median_val = interp1(Funiq, xuniq, 0.5);
         mad_fun = @(d) (interp1(x, F, median_val + d) - interp1(x, F, median_val - d)) - 0.5;
         
         d0 = (x(end) - x(1)) / 4; % initial guess for d
@@ -167,9 +166,9 @@ if ~optimizationFlag
     F = cumsum(pdfLC) * dx;
     if ~isnan(F(end))
         F = F / F(end);   % normalize
-%         median_idx = find(F >= 0.5, 1, 'first');
-%         median_val = x(median_idx);
-        median_val = interp1(F, x, 0.5);
+        [Funiq, idx] = unique(F);
+        xuniq = x(idx);
+        median_val = interp1(Funiq, xuniq, 0.5);
         mad_fun = @(d) (interp1(x, F, median_val + d) - interp1(x, F, median_val - d)) - 0.5;
         
         d0 = (x(end) - x(1)) / 4; % initial guess for d

@@ -136,9 +136,6 @@ if ~optimizationFlag
     F = cumsum(pdf) * dx;
     if ~isnan(F(end))
         F = F / F(end);   % normalize
-%         median_idx = find(F >= 0.5, 1, 'first');
-%         median_val = x(median_idx);
-%         median_val = interp1(F, x, 0.5);
         [Funiq, idx] = unique(F);
         xuniq = x(idx);
         median_val = interp1(Funiq, xuniq, 0.5);
