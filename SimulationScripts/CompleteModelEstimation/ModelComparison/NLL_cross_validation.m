@@ -6,22 +6,25 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/PlotUtils/
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Utils/')
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/OptimizationUtils/')
 
-modelData                            = load('../modelContOriData_cov.mat');
-modelData.data.resp_err_all          = modelData.data.err;
-modelData.data.confidence_report_all = modelData.data.confReport;
+% modelData                            = load('../modelContOriData_cov.mat');
+modelData                            = load('../modelContOriData.mat');
+% modelData.data.resp_err_all          = modelData.data.resp_err_all;
+% modelData.data.confidence_report_all = modelData.data.confidence_report_all;
 
 %% Cross-validate
 errBins   = -90:0.1:90;
 cv_result = NLLCrossValidate(modelData.data, errBins);
-save('./CV_Data/cross_validation_cov_model.mat', 'cv_result');
+save('./CV_Data/cross_validation_ind_model.mat', 'cv_result'); % TODO: chnage it to ind model
 
 %% NLL on test data
 errBins   = -90:0.1:90;
-cv_result = load('./CV_Data/cross_validation_cov_model.mat'); % Make sure data reads off correctly
+
+% cv_result = load('./CV_Data/cross_validation_ind_model.mat');
+
 optParams.nStarts = 20;
 optParams.hyperParamC1 = 0;
 optParams.randomGuessModel = true;
-nllData = computeNLL_CV(modelData.data, errBins, cv_result.cv_result, optParams); 
+nllData = computeNLL_CV(modelData.data, errBins, cv_result.cv_result); 
 
 %
 figure
@@ -33,14 +36,14 @@ hold off
 ylabel("Count")
 xlabel("NLL")
 legend
-title("Fit on test data (GT: cov model data)")
+title("Fit on test data")
 
 subplot(2, 2, 2)
 histogram(nllData.deltaNLL) 
 ylabel("Count")
 xlabel("delta NLL (cov - ind)")
 legend
-title("Fit on test data (GT: cov model data)")
+title("Fit on test data")
 
 subplot(2, 2, 3)
 hold on

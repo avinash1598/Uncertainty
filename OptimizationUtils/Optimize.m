@@ -69,8 +69,6 @@ end
 function results = multiStartFit(grpOriErr, n_uncertainty_levels, metaData, model, nStarts)
 % model: cov, ind
 
-% nStarts = 20;
-
 if model == "cov"
     nParams = n_uncertainty_levels + 4;
 elseif model == "ind"
