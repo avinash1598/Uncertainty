@@ -17,8 +17,11 @@ save('./CV_Data/cross_validation_cov_model.mat', 'cv_result');
 
 %% NLL on test data
 errBins   = -90:0.1:90;
-cv_result = load('./CV_Data/cross_validation_cov_model.mat');
-nllData = computeNLL_CV(modelData.data, errBins, cv_result.cv_result); 
+cv_result = load('./CV_Data/cross_validation_cov_model.mat'); % Make sure data reads off correctly
+optParams.nStarts = 20;
+optParams.hyperParamC1 = 0;
+optParams.randomGuessModel = true;
+nllData = computeNLL_CV(modelData.data, errBins, cv_result.cv_result, optParams); 
 
 %
 figure

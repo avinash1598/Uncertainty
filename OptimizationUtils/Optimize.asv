@@ -12,7 +12,7 @@ function result = Optimize(data, errBins, modelType, fltTrlIdx, optParams)
         randomGuessModel = optParams.randomGuessModel;
     end
     
-    fprintf("Params - nStarts: %d, hyperparam c1: %d", nStarts, hyperParamC1);
+    fprintf("Params - ")
 
     addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
     addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')

@@ -18,6 +18,7 @@ shape            = 2;
 scale            = 0.5;
 sigma_meta       = 0.2;
 Cc               = 0.7; 
+guessRate        = 0.1;
 
 % biasAmp          = 0; %0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
 % shape            = 0.0848; %2;
@@ -30,7 +31,6 @@ Cc               = 0.7;
 % scale            = 500; %0.5;
 % sigma_meta       = 20; %0.2;
 % Cc               = 0.05; %0.5; 
-guessRate        = 0.1;
 
 % Preallocate arrays
 n_theta                  = numel(orientations);
@@ -122,14 +122,28 @@ data.params.guessRate             = guessRate;
 
 %% Optimize
 errBins = -90:0.1:90;
-result = Optimize(data, errBins, "ind");
 
-opt_param_sigma_s        = result.x(1:n_uncertainty_levels);
-opt_param_shape          = result.x(n_uncertainty_levels + 1);
-opt_param_scale          = result.x(n_uncertainty_levels + 2);
-opt_param_sigma_meta     = result.x(n_uncertainty_levels + 3);
-opt_param_Cc             = result.x(n_uncertainty_levels + 4);
-opt_param_guessrate      = result.x(n_uncertainty_levels + 5);
+optParams.nStarts = 1;
+optParams.hyperParamC1 = 0;
+optParams.randomGuessModel = true;
+
+result = Optimize(data, errBins, "cov", [], optParams);
+
+%%
+[~, idx] = min(result.f);
+
+% opt_param_sigma_s        = result.x(idx, 1:n_uncertainty_levels);
+% opt_param_shape          = result.x(idx ,n_uncertainty_levels + 1);
+% opt_param_scale          = result.x(idx ,n_uncertainty_levels + 2);
+% opt_param_sigma_meta     = result.x(idx, n_uncertainty_levels + 3);
+% opt_param_Cc             = result.x(idx, n_uncertainty_levels + 4);
+% opt_param_guessrate      = result.x(idx, n_uncertainty_levels + 5);
+
+opt_param_sigma_s        = result.x(idx, 1:n_uncertainty_levels);
+opt_param_scale          = result.x(idx ,n_uncertainty_levels + 1);
+opt_param_sigma_meta     = result.x(idx, n_uncertainty_levels + 2);
+opt_param_Cc             = result.x(idx, n_uncertainty_levels + 3);
+opt_param_guessrate      = result.x(idx, n_uncertainty_levels + 4);
 
 gt_sigma_s    = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 );
 gt_shape      = shape;
@@ -175,7 +189,8 @@ for i=1:uncertainty_levels
     modelParams.sigma_meta          = opt_param_sigma_meta;
     modelParams.guessRate           = opt_param_guessrate;
     
-    retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
+    retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
+%     retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
     
     anlytcl_sigma_m_stim(i)    = retData.E_sigma_m;
     anlytcl_sigma_m_stim_HC(i) = retData.E_sigma_m_HC;
@@ -210,7 +225,8 @@ for i=1:n_uncertainty_levels
     modelParams.sigma_meta          = opt_param_sigma_meta;
     modelParams.guessRate           = opt_param_guessrate;
     
-    retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
+    retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
+%     retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
     
     subplot(2, n_uncertainty_levels/2, i)
     hold on
@@ -310,4 +326,3 @@ xlabel("\sigma_s(s) (sensory noise)")
 ylabel("MAD (measurement)")
 legend
 hold off
-

@@ -17,6 +17,7 @@ binned_err_LC  = metaData.binned_err_LC;
 targetMADs     = metaData.targetMADs;
 targetMADs_HC  = metaData.targetMADs_HC;
 targetMADS_LC  = metaData.targetMADS_LC;
+hyperParamC1   = metaData.hyperParamC1;
 
 currPdfFit_HC   = zeros(nLevels, numel(errBins));
 currPdfFit_LC   = zeros(nLevels, numel(errBins));
@@ -55,6 +56,8 @@ constraint = sum( ( curr_mad_m - targetMADs ).^2 ) + ...
 ll_HC = binned_err_HC .* log( currPdfFit_HC.*curr_pHC + eps );
 ll_LC = binned_err_LC .* log( currPdfFit_LC.*curr_pLC + eps );
 
-nll = - ( sum(ll_HC(:)) + sum(ll_LC(:)) ) + 0*constraint;
+nll = - ( sum(ll_HC(:)) + sum(ll_LC(:)) ) + hyperParamC1*constraint;
+
+% fprintf('\n%.2f, %.2f \n',  - ( sum(ll_HC(:)) + sum(ll_LC(:)) ), hyperParamC1*constraint);
 
 end

@@ -18,13 +18,26 @@ formattedData = formatExpData(f, false, false); % no de-baising, work with raw e
 
 %% Cross-validate
 errBins   = -90:1:90; % this is dx which might affect fitting. This value should be optimal. not too fine. not too coarse.
-cv_result = NLLCrossValidate(formattedData, errBins);
+
+optParams.nStarts = 20;
+optParams.hyperParamC1 = 10;
+optParams.randomGuessModel = true;
+
+cv_result = NLLCrossValidate(formattedData, errBins, 5, 6, optParams);
 save('./CV_Data/cross_validation_akash.mat', 'cv_result');
 
 %% NLL on test data
-nllData = computeNLL_CV(formattedData, errBins, cv_result);
 
-%%
+load('./CV_Data/cross_validation_akash.mat', 'cv_result');
+errBins   = -90:1:90;
+% optParams.nStarts = 20;
+% optParams.hyperParamC1 = 0;
+% optParams.randomGuessModel = true;
+nllData = computeNLL_CV(formattedData, errBins, cv_result, optParams);
+
+% remove SD from the data and then see what happens
+
+%
 figure
 subplot(2, 2, 1)
 hold on

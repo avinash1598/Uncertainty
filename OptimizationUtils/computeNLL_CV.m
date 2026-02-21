@@ -1,7 +1,17 @@
-function nllData = computeNLL_CV(data, errBins, cv_data)
+function nllData = computeNLL_CV(data, errBins, cv_data, optParams)
 
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/')
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
+
+if nargin < 4 || isempty(optParams)
+    nStarts          = 20;
+    hyperParamC1     = 100;
+    randomGuessModel = true;
+else
+    nStarts          = optParams.nStarts;
+    hyperParamC1     = optParams.hyperParamC1;
+    randomGuessModel = optParams.randomGuessModel;
+end
 
 % Exp data
 trlData              = convertToTrialData(data);
@@ -10,7 +20,7 @@ trlErrors            = trlData.trlErrors;
 trlConfReports       = trlData.trlConfReports;
 trlUncertaintyLevels = trlData.trlUncertaintyLevels;
 
-warning("This is not computed on filtered data")
+warning("This is not computed on filtered data. But maybe this is the right approach since this is th ground truth.")
 y_mad      = trlData.y_mad;
 y_HC_mad   = trlData.y_HC_mad;
 y_LC_mad   = trlData.y_LC_mad;
@@ -42,6 +52,9 @@ for h=1:nPerm
         % ---- Split trials ----
         testIdx  = (foldID == k);
         
+        % TODO: later get it directly from the structure or use it to do
+        % sanity check to make sure right data is used.
+
         % build binned data for train dataset
         binnedData = buildBinnedData( ...
             n_uncertainty_levels, ...
@@ -49,6 +62,9 @@ for h=1:nPerm
             trlErrors(testIdx), ...
             trlConfReports(testIdx), ...
             trlUncertaintyLevels(testIdx));
+        
+%         metrics = computeMetricsFromTrlData(trlErrors(testIdx), ...
+%             trlConfReports(testIdx), trlUncertaintyLevels(testIdx));
         
         metaData.n_levels      = n_uncertainty_levels;
         metaData.errBins       = errBins;
@@ -59,7 +75,13 @@ for h=1:nPerm
         metaData.targetMADs    = y_mad;
         metaData.targetMADs_HC = y_HC_mad;
         metaData.targetMADS_LC = y_LC_mad;
-
+%         metaData.targetMADs    = metrics.mads;
+%         metaData.targetMADs_HC = metrics.mads_HC;
+%         metaData.targetMADS_LC = metrics.mads_LC;
+        
+        metaData.hyperParamC1      = hyperParamC1;
+        metaData.randomGuessModel  = randomGuessModel;
+        
         % Cov model
         fvalsCovModel     = cv_data.resultsListCov{h, k}.f;
         fitParamsCovModel = cv_data.resultsListCov{h, k}.x;

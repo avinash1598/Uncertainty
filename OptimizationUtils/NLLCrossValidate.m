@@ -1,4 +1,4 @@
-function cv_result = NLLCrossValidate(data, errBins, K, nPerm)
+function cv_result = NLLCrossValidate(data, errBins, K, nPerm, optParams)
 
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/OptimizationUtils/')
 
@@ -8,20 +8,25 @@ if nargin < 3
 end
 
 % Cross-validation
-trlData   = convertToTrialData(data);
-grpOriErr = trlData.grpOriErr;
-N         = numel(grpOriErr(:));
+trlData              = convertToTrialData(data);
+trlErrors            = trlData.trlErrors;
+trlConfReports       = trlData.trlConfReports;
+trlUncertaintyLevels = trlData.trlUncertaintyLevels;
+grpOriErr            = trlData.grpOriErr;
+N                    = numel(grpOriErr(:));
+n_uncertainty_levels = trlData.n_uncertainty_levels;
 
 % For each fold save nll test and train data
 resultsListCov = cell(nPerm, K);
 resultsListInd = cell(nPerm, K);
+cvTrlData      = cell(nPerm, K);
 foldIDs        = cell(nPerm,1);
 perms          = cell(nPerm,1);
 
 parpool;
 
 % Run k-fold cross-validation
-parfor h=1:nPerm
+parfor h=1:nPerm %parfor
     perm = randperm(N);
     foldID = mod(perm-1, K) + 1;
     
@@ -38,15 +43,15 @@ parfor h=1:nPerm
         trainIdx = ~testIdx;
         
         % Run multi-start optimization for cov model
-        results = Optimize(data, errBins, "cov", trainIdx);
+        results = Optimize(data, errBins, "cov", trainIdx, optParams);
         % resultsListCov{idx} = results;
         resultsListCov{h, k} = results;
         
         % Run multi-start optimization for ind model
-        results = Optimize(data, errBins, "ind", trainIdx);
+        results = Optimize(data, errBins, "ind", trainIdx, optParams);
         % resultsListInd{idx} = results;
         resultsListInd{h, k} = results;
-        
+
         % Should i pick the max p-val? or something else like mode? Look at
         % distribution maybe and then decide.
     end
@@ -54,6 +59,36 @@ end
 
 Data.resultsListCov = resultsListCov;
 Data.resultsListInd = resultsListInd;
+Data.perms          = perms;
+Data.foldIDs        = foldIDs;
+
+save('checkpoint.mat','Data')
+
+for h=1:nPerm
+    foldID = foldIDs{h};
+
+    for k = 1:K
+        testIdx  = (foldID == k);
+        trainIdx = ~testIdx;
+
+        % TODO: save trial and test data for each CV iteration
+        trainData.trlErrors            = trlErrors(trainIdx);
+        trainData.trlConfReports       = trlConfReports(trainIdx);
+        trainData.trlUncertaintyLevels = trlUncertaintyLevels(trainIdx);
+
+        testData.trlErrors            = trlErrors(testIdx);
+        testData.trlConfReports       = trlConfReports(testIdx);
+        testData.trlUncertaintyLevels = trlUncertaintyLevels(testIdx);
+
+        cvTrlData{h, k}.trainData = trainData;
+        cvTrlData{h, k}.testData = testData;
+        cvTrlData{h, k}.n_uncertainty_levels = n_uncertainty_levels;
+    end
+end
+
+Data.resultsListCov = resultsListCov;
+Data.resultsListInd = resultsListInd;
+Data.cvTrlData      = cvTrlData;
 Data.perms          = perms;
 Data.foldIDs        = foldIDs;
 
