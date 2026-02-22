@@ -25,11 +25,11 @@ optParams.hyperParamC1 = 10;
 optParams.randomGuessModel = true;
 
 cv_result = NLLCrossValidate(formattedData, errBins, 5, 6, optParams);
-save('./CV_Data/cross_validation_tien_constr.mat', 'cv_result');
+save('./CV_Data/cross_validation_akas.mat', 'cv_result');
 
 %% NLL on test data
 
-load('./CV_Data/cross_validation_tien_constr.mat', 'cv_result');
+load('./CV_Data/cross_validation_akash.mat', 'cv_result');
 errBins   = -90:1:90;
 % optParams.nStarts = 20;
 % optParams.hyperParamC1 = 0;

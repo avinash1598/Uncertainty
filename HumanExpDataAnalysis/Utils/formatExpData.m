@@ -91,7 +91,7 @@ stim_dur_all          = zeros(n_uncertainty_levels, n_orientations, nTrials);
 
 % Orientation dependent std
 stimSummary = groupsummary(data.dat, {'stimContrast', 'stimSpread', 'stimDur', 'stimOri'}, ...
-    {'mean', 'std', @(x) mad(x,1), 'numel'}, 'rawOriError');
+    {'mean', 'std', @(x) mad(x,1)}, 'rawOriError');
 stdByOri        = reshape( stimSummary.std_rawOriError, [numel(stimSummary.std_rawOriError)/n_uncertainty_levels n_uncertainty_levels]);
 madByOri        = reshape( stimSummary.fun1_rawOriError, [numel(stimSummary.fun1_rawOriError)/n_uncertainty_levels n_uncertainty_levels]); 
 stdByOri        = stdByOri';
