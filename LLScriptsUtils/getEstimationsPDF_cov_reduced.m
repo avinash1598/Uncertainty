@@ -13,6 +13,7 @@ sigma_meta                = modelParams.sigma_meta;
 guessRate                 = modelParams.guessRate;
 internalNoiseSamplesCnt   = 1000;
 
+tic
 % Internal noise covaries with sensory noise
 scaleParam = scale;
 shapeParams = sigma_s.^2 ./ scaleParam; 
@@ -25,6 +26,9 @@ for i = 1:numel(shapeParams)
 end
 
 sigma_m = sqrt( gammaSamples ); % Measurement noise
+
+elapsed_time = toc;
+disp(['Execution time:::::: ', num2str(elapsed_time), ' seconds']);
 
 % For each value of sigma_m_stim, find the probability of high
 % confidence and low confidence. These probabilitites are

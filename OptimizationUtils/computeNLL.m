@@ -1,15 +1,20 @@
 % Loss function for optimization
-function nll = computeNLL(params, metaData)
+function nll = computeNLL(params, metaData, fitType)
 
 nLevels = metaData.n_levels;
 
 % Params
-param_sigma_s        = params(1:nLevels);
-param_shape          = params(nLevels + 1);
-param_scale          = params(nLevels + 2);
-param_sigma_meta     = params(nLevels + 3);
-param_Cc             = params(nLevels + 4);
-param_guessrate      = params(nLevels + 5);
+param_sigma_s         = params(1:nLevels);
+param_shape           = params(nLevels + 1);
+param_scale           = params(nLevels + 2);
+param_sigma_meta      = params(nLevels + 3);
+param_Cc              = params(nLevels + 4);
+param_guessrate       = params(nLevels + 5);
+
+if fitType == "full"
+    param_sigma_ori_scale = params(nLevels + 6);
+    param_bias            = params(nLevels + 7);
+end
 
 % Metadata
 errBins        = metaData.errBins;
@@ -37,7 +42,15 @@ for i=1:nLevels
     modelParams.sigma_meta          = param_sigma_meta;
     modelParams.guessRate           = param_guessrate;
     
-    retData = getEstimatesPDFs_reduced_model(errBins, modelParams, false); % originally set to true
+    if fitType == "full"
+        modelParams.b             = param_sigma_s(i);
+        modelParams.a             = param_sigma_ori_scale*param_sigma_s(i);
+        modelParams.biasAmp       = param_bias;
+
+        retData = getEstimatesPDFs(1:10:180, errBins, modelParams, false);
+    else
+        retData = getEstimatesPDFs_reduced_model(errBins, modelParams, false); % originally set to true
+    end
     
     % Data for NLL
     currPdfFit_HC(i, :) = retData.analyticalPDF_HC;
@@ -55,7 +68,7 @@ constraint = sum( ( curr_mad_m - targetMADs ).^2 ) + ...
 
 % NLL loss
 ll_HC = binned_err_HC .* log( currPdfFit_HC.*curr_pHC + eps );
-ll_LC = binned_err_LC .* log( currPdfFit_LC.*curr_pLC + eps );
+ll_LC = binned_err_LC .* log( currPdfFit_LC.*curr_pLC + eps ); 
 
 nll = - ( sum(ll_HC(:)) + sum(ll_LC(:)) ) + hyperParamC1*constraint;
 

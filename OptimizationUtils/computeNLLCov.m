@@ -1,5 +1,5 @@
 % Loss function for optimization
-function nll = computeNLLCov(params, metaData)
+function nll = computeNLLCov(params, metaData, fitType)
 
 nLevels = metaData.n_levels;
 
@@ -9,6 +9,11 @@ param_scale          = params(nLevels + 1);
 param_sigma_meta     = params(nLevels + 2);
 param_Cc             = params(nLevels + 3);
 param_guessrate      = params(nLevels + 4);
+
+if fitType == "full"
+    param_sigma_ori_scale = params(nLevels + 5);
+    param_bias            = params(nLevels + 6);
+end
 
 % Metadata
 errBins        = metaData.errBins;
@@ -36,7 +41,15 @@ for i=1:nLevels
     modelParams.sigma_meta          = param_sigma_meta;
     modelParams.guessRate           = param_guessrate;
     
-    retData = getEstimationsPDF_cov_reduced(errBins, modelParams, false); % originally set to true
+    if fitType == "full"
+        modelParams.b             = param_sigma_s(i);
+        modelParams.a             = param_sigma_ori_scale*param_sigma_s(i);
+        modelParams.biasAmp       = param_bias;
+        
+        retData = getEstimationsPDF_cov(0:15:179, errBins, modelParams, false);
+    else
+        retData = getEstimationsPDF_cov_reduced(errBins, modelParams, false); % originally set to true
+    end
     
     % Data for NLL
     currPdfFit_HC(i, :) = retData.analyticalPDF_HC;

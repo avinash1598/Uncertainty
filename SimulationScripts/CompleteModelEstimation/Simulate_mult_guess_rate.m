@@ -12,15 +12,23 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
 
-orientations     = linspace(0, 179, 10); %0:10:180; % 
-ntrials_per_ori  = 250; %1000;
-b                = 10*linspace(0.1, 1.5, 6); % 1.2 % Choose b such that average noise level ranges from low to high (relative to internal noise level)
-a                = 1.*b; %0.67   % Does a depend upon b? Yes
-biasAmp          = 0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
-shape            = 0.848;
-scale            = 338.1997;
-sigma_meta       = 41.5023;
-Cc               = 0.109; 
+% orientations     = linspace(0, 179, 30); %0:10:180; % 
+orientations     = linspace(0, 179, 10); % Alert!!!! This has impact on quality of analytical solution
+ntrials_per_ori  = 2500; %1000;
+b                = linspace(0.1, 1.5, 6); % 1.2 % Choose b such that average noise level ranges from low to high (relative to internal noise level)
+a                = 0.67.*b; %0.67   % Does a depend upon b? Yes
+% biasAmp          = 0; %10       % Does bias depend upon uncertainty level? No. This bias level seems okay.
+% shape            = 0.848;
+% scale            = 338.1997;
+% sigma_meta       = 41.5023;
+% Cc               = 0.109; 
+% guessRate        = 0;
+
+biasAmp          = 0.5; % problem at 2       % Does bias depend upon uncertainty level? No. This bias level seems okay.
+shape            = 2;
+scale            = 0.5; %0.5;
+sigma_meta       = 0.2;
+Cc               = 0.7; 
 guessRate        = 0;
 
 % Preallocate arrays
@@ -130,8 +138,8 @@ for i=1:uncertainty_levels
     modelParams.sigma_meta          = sigma_meta;
     modelParams.guessRate           = guessRate;
     
-    % retData = getEstimatesPDFs(orientations, rvOriErr, modelParams);
-    retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
+    retData = getEstimatesPDFs(1:10:180, rvOriErr, modelParams);
+%     retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
     
     anlytcl_sigma_m_stim(i)    = retData.E_sigma_m;
     anlytcl_sigma_m_stim_HC(i) = retData.E_sigma_m_HC;
@@ -151,6 +159,8 @@ n_uncertainty_levels = numel(b);
 
 for i=1:n_uncertainty_levels
     
+    modelParams.b                   = b(i);
+    modelParams.a                   = a(i);
     modelParams.sigma_s             = data.params.sigma_s_reduced_model(i);
     modelParams.biasAmp             = biasAmp;
     modelParams.shape               = shape;
@@ -159,8 +169,8 @@ for i=1:n_uncertainty_levels
     modelParams.sigma_meta          = sigma_meta;
     modelParams.guessRate           = guessRate;
     
-    retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
-    % retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
+    retData = getEstimatesPDFs(1:10:180, rvOriErr, modelParams);
+%     retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
     
     subplot(2, n_uncertainty_levels/2, i)
     hold on

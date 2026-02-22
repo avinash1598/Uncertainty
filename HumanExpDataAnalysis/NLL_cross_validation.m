@@ -10,7 +10,7 @@ addpath('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis\Utils\')
 
 % expData            = load('Data\CORNFB01.mat'); % Yichao
 %expData            = load('./Data/COR33.mat'); % Akash
-expData            = load('Data\COR31.mat'); % Tien
+expData            = load('./Data/COR31.mat'); % Tien
 % expData            = load('./Data/COR32.mat'); % Jiaming
 
 fltData       = expData.dat( expData.dat.session > 0 , :); 
