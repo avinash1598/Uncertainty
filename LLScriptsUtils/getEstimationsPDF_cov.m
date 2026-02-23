@@ -100,7 +100,6 @@ est_mad_m_stim_LC = zeros(numOris, 1);
 % est_mad_m_stim_LC(:) = mad_m_LC_s;
 
 for i = 1:numOris
-    
     [pdf, pdfHC, pdfLC, sigma_, sigmaHC, sigmaLC, mad_m, mad_m_HC, mad_m_LC] = getGaussianMixturePDF(rvOriErrs, ...
         sigma_m_stim(i, :), bias(i), pHC_all(i, :), pLC_all(i, :), guessRate, optimizationFlag);
     

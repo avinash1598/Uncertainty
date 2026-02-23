@@ -25,7 +25,7 @@ optParams.hyperParamC1 = 10;
 optParams.randomGuessModel = true;
 
 cv_result = NLLCrossValidate(formattedData, errBins, 5, 6, optParams);
-save('./CV_Data/cross_validation_tien_constr.mat', 'cv_result');
+save('./CV_Data/cross_validation_tien_full.mat', 'cv_result');
 
 %% NLL on test data
 

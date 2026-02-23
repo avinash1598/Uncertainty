@@ -130,20 +130,19 @@ optParams.nStarts = 10;
 optParams.hyperParamC1 = 0;
 optParams.randomGuessModel = true;
 
-% result = Optimize(data, errBins, "cov", [], optParams, "full");
 result = Optimize(data, errBins, "ind", [], optParams, "full");
 
 %%
 [~, idx] = min(result.f);
 
 opt_param_sigma_s         = result.x(idx, 1:n_uncertainty_levels);
-% opt_param_shape           = result.x(idx, n_uncertainty_levels + 1 - 1);
-opt_param_scale           = result.x(idx, n_uncertainty_levels + 2-1);
-opt_param_sigma_meta      = result.x(idx, n_uncertainty_levels + 3-1);
-opt_param_Cc              = result.x(idx, n_uncertainty_levels + 4-1);
-opt_param_guessrate       = result.x(idx, n_uncertainty_levels + 5-1);
-opt_param_sigma_ori_scale = result.x(idx, n_uncertainty_levels + 6-1);
-opt_param_bias            = result.x(idx, n_uncertainty_levels + 7-1);
+opt_param_shape           = result.x(idx, n_uncertainty_levels + 1 - 0);
+opt_param_scale           = result.x(idx, n_uncertainty_levels + 2-0);
+opt_param_sigma_meta      = result.x(idx, n_uncertainty_levels + 3-0);
+opt_param_Cc              = result.x(idx, n_uncertainty_levels + 4-0);
+opt_param_guessrate       = result.x(idx, n_uncertainty_levels + 5-0);
+opt_param_sigma_ori_scale = result.x(idx, n_uncertainty_levels + 6-0);
+opt_param_bias            = result.x(idx, n_uncertainty_levels + 7-0);
 
 % opt_param_sigma_s         = result.x(idx, 1:n_uncertainty_levels);
 % opt_param_scale           = result.x(idx ,n_uncertainty_levels + 1);
@@ -167,7 +166,7 @@ for i =1:n_uncertainty_levels
     fprintf("GT: %.4f, Fit: %.4f \n", b(i), opt_param_sigma_s(i))
 end
 
-% fprintf("GT: %.4f, Fit: %.4f \n", gt_shape, opt_param_shape)
+fprintf("GT: %.4f, Fit: %.4f \n", gt_shape, opt_param_shape)
 fprintf("GT: %.4f, Fit: %.4f \n", gt_scale, opt_param_scale)
 fprintf("GT: %.4f, Fit: %.4f \n", gt_sigma_meta, opt_param_sigma_meta)
 fprintf("GT: %.4f, Fit: %.4f \n", gt_Cc, opt_param_Cc)
@@ -225,8 +224,12 @@ for i=1:n_uncertainty_levels
     modelParams.sigma_meta          = opt_param_sigma_meta;
     modelParams.guessRate           = opt_param_guessrate;
     
+<<<<<<< Updated upstream
 %     retData = getEstimatesPDFs(1:10:180, rvOriErr, modelParams);
     retData = getEstimationsPDF_cov(1:10:180, rvOriErr, modelParams);
+=======
+    retData = getEstimatesPDFs(1:10:180, rvOriErr, modelParams);
+>>>>>>> Stashed changes
     
     subplot(2, n_uncertainty_levels/2, i)
     hold on

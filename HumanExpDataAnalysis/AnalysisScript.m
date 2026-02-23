@@ -5,8 +5,8 @@ clear all
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
 
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR31.mat'); % Tien
-% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR33.mat'); % Akash
-data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB01.mat');   % Yichao
+data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR33.mat'); % Akash
+% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB01.mat');   % Yichao
 
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/Data/COR32.mat'); % Jiaming
 
@@ -1069,7 +1069,6 @@ xlabel("Orientation")
 ylabel("Mean error")
 title("Orientation bias")
 
-
 figure
 
 stdByOri = formattedData.stdByOri;
@@ -1078,7 +1077,7 @@ madByOri = formattedData.madByOri;
 for i = 1:n_uncertainty_levels
     subplot(1, 2, 1)
     hold on
-    plot(orientations, stdByOri(i, :), LineWidth=1, DisplayName=""+i)
+    plot(orientations, stdByOri(i, :), LineWidth=0.5, DisplayName=""+i)
     plot(orientations, mean(stdByOri, 1), LineWidth=2, HandleVisibility="off")
     xlabel("Orientation")
     ylabel("Std dev")
@@ -1087,7 +1086,7 @@ for i = 1:n_uncertainty_levels
     
     subplot(1, 2, 2)
     hold on
-    plot(orientations, madByOri(i, :), LineWidth=1, DisplayName=""+i)
+    plot(orientations, madByOri(i, :), LineWidth=0.5, DisplayName=""+i)
     plot(orientations, mean(madByOri, 1), LineWidth=2, HandleVisibility="off")
     xlabel("Orientation")
     ylabel("MAD")
@@ -1095,6 +1094,44 @@ for i = 1:n_uncertainty_levels
     hold off
 end
 
+
+%% Fit to find scale for oblique effect
+
+figure
+
+modelFun = @(params, ori) params(1) + ...
+                               params(2) .* abs(sind(ori - 90));
+
+bs = zeros(1, n_uncertainty_levels);
+as = zeros(1, n_uncertainty_levels);
+
+for i=1:n_uncertainty_levels
+
+    initParams = [mean(stdByOri(i, :)), 1];
+    
+    lb = [0 0];  % optional lower bounds
+    ub = [ Inf  Inf];  % optional upper bounds
+    
+    params_est = lsqcurvefit(modelFun, initParams, ...
+                             orientations', stdByOri(i, :), ...
+                             lb, ub);
+    
+    b_est = params_est(1);
+    a_est = params_est(2);
+
+    bs(i) = b_est;
+    as(i) = a_est;
+    
+    subplot(2, 3, i)
+    hold on
+    plot( orientations, b_est + a_est*abs(sind(orientations - 90)), LineWidth=1.5)
+    scatter(orientations, stdByOri(i, :))
+    ylim([0 60])
+    hold off
+
+end
+
+scale = as./bs;
 
 % %% Stats split by orientation
 % 
