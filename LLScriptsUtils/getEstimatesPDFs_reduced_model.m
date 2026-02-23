@@ -112,15 +112,15 @@ pdfLC = pdfLC./trapz(x, pdfLC);
 %% Calculate std dev
 dx = x(2) - x(1); % Assuming uniform
 % warning("Make sure error bins are uniformly spaced")
-mu = sum( x.*pdf'*dx );
+mu = 0; %sum( x.*pdf'*dx );
 sigma = sqrt( sum( ((x - mu).^2).*pdf'*dx ) );
 
 % For HC
-mu = sum( x.*pdfHC'*dx );
+mu = 0; %sum( x.*pdfHC'*dx );
 sigmaHC = sqrt( sum( ((x - mu).^2).*pdfHC'*dx ) );
 
 % For LC
-mu = sum( x.*pdfLC'*dx );
+mu = 0; %sum( x.*pdfLC'*dx );
 sigmaLC = sqrt( sum( ((x - mu).^2).*pdfLC'*dx ) );
 
 %% MAD from PDF
@@ -131,9 +131,9 @@ if ~optimizationFlag
     F = cumsum(pdf) * dx;
     if ~isnan(F(end))
         F = F / F(end);   % normalize
-        [Funiq, idx] = unique(F);
-        xuniq = x(idx);
-        median_val = interp1(Funiq, xuniq, 0.5);
+        % [Funiq, idx] = unique(F);
+        % xuniq = x(idx);
+        median_val = 0; %interp1(Funiq, xuniq, 0.5);
         mad_fun = @(d) (interp1(x, F, median_val + d) - interp1(x, F, median_val - d)) - 0.5;
         
         d0 = (x(end) - x(1)) / 4; % initial guess for d
@@ -148,9 +148,9 @@ if ~optimizationFlag
     F = cumsum(pdfHC) * dx;
     if ~isnan(F(end))
         F = F / F(end);   % normalize
-        [Funiq, idx] = unique(F);
-        xuniq = x(idx);
-        median_val = interp1(Funiq, xuniq, 0.5);
+        % [Funiq, idx] = unique(F);
+        % xuniq = x(idx);
+        median_val = 0; %interp1(Funiq, xuniq, 0.5);
         mad_fun = @(d) (interp1(x, F, median_val + d) - interp1(x, F, median_val - d)) - 0.5;
         
         d0 = (x(end) - x(1)) / 4; % initial guess for d
@@ -166,9 +166,9 @@ if ~optimizationFlag
     F = cumsum(pdfLC) * dx;
     if ~isnan(F(end))
         F = F / F(end);   % normalize
-        [Funiq, idx] = unique(F);
-        xuniq = x(idx);
-        median_val = interp1(Funiq, xuniq, 0.5);
+        % [Funiq, idx] = unique(F);
+        % xuniq = x(idx);
+        median_val = 0; %interp1(Funiq, xuniq, 0.5);
         mad_fun = @(d) (interp1(x, F, median_val + d) - interp1(x, F, median_val - d)) - 0.5;
         
         d0 = (x(end) - x(1)) / 4; % initial guess for d

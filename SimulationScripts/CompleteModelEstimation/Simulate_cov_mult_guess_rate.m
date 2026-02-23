@@ -117,7 +117,6 @@ data.params.guessRate             = guessRate;
 
 % save('modelContOriData_cov.mat', "data")
 
-
 %% Get analytical solution
 anlytcl_sigma_m_stim = zeros(1, uncertainty_levels);
 anlytcl_sigma_m_stim_HC = zeros(1, uncertainty_levels);
@@ -127,7 +126,7 @@ anlytcl_mad_m_stim_HC = zeros(1, uncertainty_levels);
 anlytcl_mad_m_stim_LC = zeros(1, uncertainty_levels);
 
 for i=1:uncertainty_levels
-    rvOriErr = -90:0.1:90;
+    rvOriErr = -90:0.5:90;
     
     modelParams.b                   = b(i);
     modelParams.a                   = a(i);
@@ -139,10 +138,10 @@ for i=1:uncertainty_levels
     modelParams.guessRate           = guessRate;
     
     tic
-    retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams);
+    retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams, true);
     elapsed_time = toc;
     disp(['Execution time: ', num2str(elapsed_time), ' seconds']);
-
+    
 %     tic
 %     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
 %     elapsed_time = toc;
@@ -151,11 +150,11 @@ for i=1:uncertainty_levels
     anlytcl_sigma_m_stim(i)    = retData.E_sigma_m;
     anlytcl_sigma_m_stim_HC(i) = retData.E_sigma_m_HC;
     anlytcl_sigma_m_stim_LC(i) = retData.E_sigma_m_LC;
-
+    
     anlytcl_mad_m_stim(i)      = retData.mad_m;
     anlytcl_mad_m_stim_HC(i)   = retData.mad_m_HC;
     anlytcl_mad_m_stim_LC(i)   = retData.mad_m_LC;
-
+    
 end
 
 %%

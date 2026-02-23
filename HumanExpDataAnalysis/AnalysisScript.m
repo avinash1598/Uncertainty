@@ -5,8 +5,8 @@ clear all
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
 
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR31.mat'); % Tien
-data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR33.mat'); % Akash
-% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB01.mat');   % Yichao
+% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR33.mat'); % Akash
+data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB01.mat');   % Yichao
 
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/Data/COR32.mat'); % Jiaming
 
@@ -1078,7 +1078,8 @@ madByOri = formattedData.madByOri;
 for i = 1:n_uncertainty_levels
     subplot(1, 2, 1)
     hold on
-    plot(orientations, stdByOri(i, :), LineWidth=1.5, DisplayName=""+i)
+    plot(orientations, stdByOri(i, :), LineWidth=1, DisplayName=""+i)
+    plot(orientations, mean(stdByOri, 1), LineWidth=2, HandleVisibility="off")
     xlabel("Orientation")
     ylabel("Std dev")
     legend
@@ -1086,7 +1087,8 @@ for i = 1:n_uncertainty_levels
     
     subplot(1, 2, 2)
     hold on
-    plot(orientations, madByOri(i, :), LineWidth=1.5, DisplayName=""+i)
+    plot(orientations, madByOri(i, :), LineWidth=1, DisplayName=""+i)
+    plot(orientations, mean(madByOri, 1), LineWidth=2, HandleVisibility="off")
     xlabel("Orientation")
     ylabel("MAD")
     legend

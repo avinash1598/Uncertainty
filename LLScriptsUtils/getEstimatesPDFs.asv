@@ -27,7 +27,7 @@ scaleParam = scale;
 gammaSamples = gaminv(linspace(1/internalNoiseSamplesCnt, 1 - 1/internalNoiseSamplesCnt, internalNoiseSamplesCnt), ...
     shapeParam, scaleParam);
 
-sigma_s_stim = b + a.*(abs(sind(2*stimOris))); %sigma_s_stim = sigma_s_stim';
+sigma_s_stim = b + a.*(abs(sind(stimOris - 90))); %sigma_s_stim = sigma_s_stim';
 sigma_m_stim = sqrt( sigma_s_stim'.^2 + gammaSamples ); % Measurement noise
 
 % For each value of sigma_m_stim, find the probability of high

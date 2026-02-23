@@ -13,7 +13,6 @@ sigma_meta                = modelParams.sigma_meta;
 guessRate                 = modelParams.guessRate;
 internalNoiseSamplesCnt   = 1000;
 
-tic
 % Internal noise covaries with sensory noise
 scaleParam = scale;
 shapeParams = sigma_s.^2 ./ scaleParam; 
@@ -26,9 +25,6 @@ for i = 1:numel(shapeParams)
 end
 
 sigma_m = sqrt( gammaSamples ); % Measurement noise
-
-elapsed_time = toc;
-disp(['Execution time:::::: ', num2str(elapsed_time), ' seconds']);
 
 % For each value of sigma_m_stim, find the probability of high
 % confidence and low confidence. These probabilitites are
@@ -121,15 +117,15 @@ pdfLC = pdfLC./trapz(x, pdfLC);
 dx = x(2) - x(1); % Assuming uniform
 % warning("Make sure error bins are uniformly spaced")
 
-mu = sum( x.*pdf'*dx );
+mu = 0; %sum( x.*pdf'*dx );
 sigma = sqrt( sum( ((x - mu).^2).*pdf'*dx ) );
 
 % For HC
-mu = sum( x.*pdfHC'*dx );
+mu = 0; %sum( x.*pdfHC'*dx );
 sigmaHC = sqrt( sum( ((x - mu).^2).*pdfHC'*dx ) );
 
 % For LC
-mu = sum( x.*pdfLC'*dx );
+mu = 0; %sum( x.*pdfLC'*dx );
 sigmaLC = sqrt( sum( ((x - mu).^2).*pdfLC'*dx ) );
 
 %% MAD from PDF
@@ -140,9 +136,9 @@ if ~optimizationFlag
     F = cumsum(pdf) * dx;
     if ~isnan(F(end))
         F = F / F(end);   % normalize
-        [Funiq, idx] = unique(F);
-        xuniq = x(idx);
-        median_val = interp1(Funiq, xuniq, 0.5);
+        %[Funiq, idx] = unique(F);
+        %xuniq = x(idx);
+        median_val = 0; %interp1(Funiq, xuniq, 0.5);
         
         mad_fun = @(d) (interp1(x, F, median_val + d) - interp1(x, F, median_val - d)) - 0.5;
         
@@ -158,12 +154,9 @@ if ~optimizationFlag
     F = cumsum(pdfHC) * dx;
     if ~isnan(F(end))
         F = F / F(end);   % normalize
-%         median_idx = find(F >= 0.5, 1, 'first');
-%         median_val = x(median_idx);
-%         median_val = interp1(F, x, 0.5);
-        [Funiq, idx] = unique(F);
-        xuniq = x(idx);
-        median_val = interp1(Funiq, xuniq, 0.5);
+        %[Funiq, idx] = unique(F);
+        %xuniq = x(idx);
+        median_val = 0; %interp1(Funiq, xuniq, 0.5);
 
         mad_fun = @(d) (interp1(x, F, median_val + d) - interp1(x, F, median_val - d)) - 0.5;
     
@@ -180,12 +173,9 @@ if ~optimizationFlag
     F = cumsum(pdfLC) * dx;
     if ~isnan(F(end))
         F = F / F(end);   % normalize
-%         median_idx = find(F >= 0.5, 1, 'first');
-%         median_val = x(median_idx);
-        % median_val = interp1(F, x, 0.5);
-        [Funiq, idx] = unique(F);
-        xuniq = x(idx);
-        median_val = interp1(Funiq, xuniq, 0.5);
+        %[Funiq, idx] = unique(F);
+        %xuniq = x(idx);
+        median_val = 0; %interp1(Funiq, xuniq, 0.5);
         
         mad_fun = @(d) (interp1(x, F, median_val + d) - interp1(x, F, median_val - d)) - 0.5;
         

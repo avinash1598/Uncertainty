@@ -14,7 +14,7 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 
 % orientations     = linspace(0, 179, 30); %0:10:180; % 
 orientations     = linspace(0, 179, 10); % Alert!!!! This has impact on quality of analytical solution
-ntrials_per_ori  = 2500; %1000;
+ntrials_per_ori  = 250; %1000;
 b                = linspace(0.1, 1.5, 6); % 1.2 % Choose b such that average noise level ranges from low to high (relative to internal noise level)
 a                = 0.67.*b; %0.67   % Does a depend upon b? Yes
 % biasAmp          = 0; %10       % Does bias depend upon uncertainty level? No. This bias level seems okay.
@@ -43,7 +43,7 @@ confidence_report_all = zeros(uncertainty_levels, n_theta, ntrials_per_ori);
 
 % Simulation loop
 % Stimulus dependent sensory noise
-sigma_s_stim = b' + a'*(abs(sind(2*orientations)));
+sigma_s_stim = b' + a'*(abs(sind(( 2*orientations) )));
 bias = biasAmp*sind(2*orientations); 
 
 for l=1:uncertainty_levels

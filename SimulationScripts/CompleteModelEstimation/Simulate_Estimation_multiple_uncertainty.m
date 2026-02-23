@@ -10,14 +10,14 @@ close all
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Utils')
 
 orientations     = linspace(0, 179, 10); %0:10:180; % 
-ntrials_per_ori  = 25; %1000;
+ntrials_per_ori  = 2500; %1000;
 b                = linspace(0.01, 1.5, 6); % 1.2 % Choose b such that average noise level ranges from low to high (relative to internal noise level)
 a                = 0.67.*b; %0.67   % Does a depend upon b? Yes
-% biasAmp          = 0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
-% shape            = 2;
-% scale            = 0.5;
-% sigma_meta       = 0.2;
-% Cc               = 0.5; 
+biasAmp          = 0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
+shape            = 2;
+scale            = 0.5;
+sigma_meta       = 0.2;
+Cc               = 0.5; 
 
 % biasAmp          = 0; %0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
 % shape            = 0.0848; %2;
@@ -25,11 +25,11 @@ a                = 0.67.*b; %0.67   % Does a depend upon b? Yes
 % sigma_meta       = 41.5023; %0.2;
 % Cc               = 0.1097; %0.5; 
 
-biasAmp          = 0;
-shape            = 0.056712; %2;
-scale            = 41413; %0.5;
-sigma_meta       = 22.485; %0.2;
-Cc               = 0.039621; %0.5; 
+% biasAmp          = 0;
+% shape            = 0.056712; %2;
+% scale            = 41413; %0.5;
+% sigma_meta       = 22.485; %0.2;
+% Cc               = 0.039621; %0.5; 
 
 % Preallocate arrays
 n_theta                  = numel(orientations);
@@ -43,10 +43,11 @@ confidence_report_all = zeros(uncertainty_levels, n_theta, ntrials_per_ori);
 % Simulation loop
 % Stimulus dependent sensory noise
 % sigma_s = [8.0253, 13.1054, 13.4657, 25.9641, 30.2290, 36.0350]';
-sigma_s = [7.7131, 11.268, 16.754, 25.546, 41.216, 45.754 ]';
-sigma_s_stim = repmat(sigma_s, [1 n_theta]);
-% sigma_s_stim = b' + a'*(abs(sind(2*orientations)));
+% sigma_s = [7.7131, 11.268, 16.754, 25.546, 41.216, 45.754 ]';
+% sigma_s_stim = repmat(sigma_s, [1 n_theta]);
+sigma_s_stim = b' + a'*(abs(sind(2*orientations)));
 bias = biasAmp*sind(2*orientations); 
+sigma_s = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 )';
 
 for l=1:uncertainty_levels
     for i = 1:n_theta
@@ -215,6 +216,7 @@ for i=1:uncertainty_levels
     modelParams.scale               = scale;
     modelParams.Cc                  = Cc;
     modelParams.sigma_meta          = sigma_meta;
+    modelParams.guessRate           = 0;
     
     % retData = getAnalyticalSol_EstimationTask(orientations, rvOriErr, modelParams);
     retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);

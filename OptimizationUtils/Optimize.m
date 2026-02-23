@@ -177,10 +177,12 @@ else
     nParams = nan;
 end
 
+parpool;
+
 x_all = zeros(nStarts,nParams);
 f_all = zeros(nStarts,1);
 
-for itr = 1:nStarts
+parfor itr = 1:nStarts
 
     fprintf( 'optimization itr: %d \n', itr) 
     success = false;
