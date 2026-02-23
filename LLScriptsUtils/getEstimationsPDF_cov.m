@@ -1,5 +1,3 @@
-% Covarying noise
-
 function [retData] = getEstimationsPDF_cov(stimVals, rvOriErrs, modelParams, optimizationFlag)
 
 % warning("Deprecated")
@@ -25,25 +23,25 @@ sigma_s_stim = b + a.*(abs(sind(2*stimOris))); %sigma_s_stim = sigma_s_stim';
 % Internal noise covaries with sensory noise
 scaleParam = scale;
 shapeParams = sigma_s_stim.^2 ./ scaleParam;
-% gammaSamples = zeros(numel(shapeParams), internalNoiseSamplesCnt);
-% % weighted_sigma_m_stim = zeros(numel(shapeParams), internalNoiseSamplesCnt);
-% 
-% for i = 1:numel(shapeParams)
-%     shapeParam = shapeParams(i);
-%     gammaSamples(i, :) = gaminv(linspace(1/internalNoiseSamplesCnt, 1 - 1/internalNoiseSamplesCnt, internalNoiseSamplesCnt), ...
-%         shapeParam, scaleParam);
-% 
-%     % weighted_sigma_m_stim(i, :) = gammaSamples(i, :).*gampdf(gammaSamples(i, :), shapeParam, scaleParam);
-% end
+gammaSamples = zeros(numel(shapeParams), internalNoiseSamplesCnt);
+% weighted_sigma_m_stim = zeros(numel(shapeParams), internalNoiseSamplesCnt);
 
-N = internalNoiseSamplesCnt;
-M = numel(shapeParams);
+for i = 1:numel(shapeParams)
+    shapeParam = shapeParams(i);
+    gammaSamples(i, :) = gaminv(linspace(1/internalNoiseSamplesCnt, 1 - 1/internalNoiseSamplesCnt, internalNoiseSamplesCnt), ...
+        shapeParam, scaleParam);
 
-p = linspace(1/N, 1-1/N, N);
-P = repmat(p, M, 1);
-A = repmat(shapeParams(:), 1, N);
+    % weighted_sigma_m_stim(i, :) = gammaSamples(i, :).*gampdf(gammaSamples(i, :), shapeParam, scaleParam);
+end
 
-gammaSamples = gaminv(P, A, scaleParam);
+%N = internalNoiseSamplesCnt;
+%M = numel(shapeParams);
+
+%p = linspace(1/N, 1-1/N, N);
+%P = repmat(p, M, 1);
+%A = repmat(shapeParams(:), 1, N);
+
+%gammaSamples = gaminv(P, A, scaleParam);
 
 % elapsed_time = toc;
 % disp(['Execution time: ', num2str(elapsed_time), ' seconds']);

@@ -1,5 +1,3 @@
-% Covarying noise
-
 function [retData] = getEstimationsPDF_cov(stimVals, rvOriErrs, modelParams, optimizationFlag)
 
 % warning("Deprecated")
