@@ -224,12 +224,8 @@ for i=1:n_uncertainty_levels
     modelParams.sigma_meta          = opt_param_sigma_meta;
     modelParams.guessRate           = opt_param_guessrate;
     
-<<<<<<< Updated upstream
 %     retData = getEstimatesPDFs(1:10:180, rvOriErr, modelParams);
     retData = getEstimationsPDF_cov(1:10:180, rvOriErr, modelParams);
-=======
-    retData = getEstimatesPDFs(1:10:180, rvOriErr, modelParams);
->>>>>>> Stashed changes
     
     subplot(2, n_uncertainty_levels/2, i)
     hold on

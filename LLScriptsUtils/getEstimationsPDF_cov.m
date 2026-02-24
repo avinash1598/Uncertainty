@@ -23,16 +23,29 @@ sigma_s_stim = b + a.*(abs(sind(2*stimOris))); %sigma_s_stim = sigma_s_stim';
 % Internal noise covaries with sensory noise
 scaleParam = scale;
 shapeParams = sigma_s_stim.^2 ./ scaleParam;
-gammaSamples = zeros(numel(shapeParams), internalNoiseSamplesCnt);
-% weighted_sigma_m_stim = zeros(numel(shapeParams), internalNoiseSamplesCnt);
+% gammaSamples = zeros(numel(shapeParams), internalNoiseSamplesCnt);
+% % weighted_sigma_m_stim = zeros(numel(shapeParams), internalNoiseSamplesCnt);
+% 
+% for i = 1:numel(shapeParams)
+%     shapeParam = shapeParams(i);
+%     gammaSamples(i, :) = gaminv(linspace(1/internalNoiseSamplesCnt, 1 - 1/internalNoiseSamplesCnt, internalNoiseSamplesCnt), ...
+%         shapeParam, scaleParam);
+% 
+%     % weighted_sigma_m_stim(i, :) = gammaSamples(i, :).*gampdf(gammaSamples(i, :), shapeParam, scaleParam);
+% end
 
-for i = 1:numel(shapeParams)
-    shapeParam = shapeParams(i);
-    gammaSamples(i, :) = gaminv(linspace(1/internalNoiseSamplesCnt, 1 - 1/internalNoiseSamplesCnt, internalNoiseSamplesCnt), ...
-        shapeParam, scaleParam);
+N = internalNoiseSamplesCnt;
+M = numel(shapeParams);
 
-    % weighted_sigma_m_stim(i, :) = gammaSamples(i, :).*gampdf(gammaSamples(i, :), shapeParam, scaleParam);
-end
+p = linspace(1/N, 1-1/N, N);
+P = repmat(p, M, 1);
+A = repmat(shapeParams(:), 1, N);
+
+gammaSamples = gaminv(P, A, scaleParam);
+
+% elapsed_time = toc;
+% disp(['Execution time: ', num2str(elapsed_time), ' seconds']);
+
 
 %N = internalNoiseSamplesCnt;
 %M = numel(shapeParams);
@@ -82,7 +95,6 @@ est_sigma_m_stim_LC = zeros(numOris, 1);
 est_mad_m_stim = zeros(numOris, 1);
 est_mad_m_stim_HC = zeros(numOris, 1);
 est_mad_m_stim_LC = zeros(numOris, 1);
-
 
 % [pdf_s, pdfHC_s, pdfLC_s, sigma_s, sigmaHC_s, sigmaLC_s, mad_m_s, mad_m_HC_s, mad_m_LC_s] = getGaussianMixturePDF( ...
 %     rvOriErrs, sigma_m_stim, bias, pHC_all, pLC_all, guessRate, optimizationFlag);
