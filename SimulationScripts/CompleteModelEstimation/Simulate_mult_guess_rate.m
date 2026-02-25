@@ -24,7 +24,7 @@ a                = 0.67.*b; %0.67   % Does a depend upon b? Yes
 % Cc               = 0.109; 
 % guessRate        = 0;
 
-biasAmp          = 0.5; % problem at 2       % Does bias depend upon uncertainty level? No. This bias level seems okay.
+biasAmp          = 0.5; %0.5; % problem at 2       % Does bias depend upon uncertainty level? No. This bias level seems okay.
 shape            = 2;
 scale            = 0.5; %0.5;
 sigma_meta       = 0.2;
@@ -43,7 +43,7 @@ confidence_report_all = zeros(uncertainty_levels, n_theta, ntrials_per_ori);
 
 % Simulation loop
 % Stimulus dependent sensory noise
-sigma_s_stim = b' + a'*(abs(sind( 2*orientations )));
+sigma_s_stim = b' + a'*(abs(sind(( orientations - 90 ) )));
 bias = biasAmp*sind(2*orientations); 
 
 for l=1:uncertainty_levels
@@ -114,14 +114,15 @@ data.params.sigma_meta            = sigma_meta;
 data.params.Cc                    = Cc;
 data.params.guessRate             = guessRate;
 
-save('modelContOriData.mat', "data")
+% save('modelContOriData.mat', "data")
 
 
 %% Get analytical solution
 anlytcl_sigma_m_stim = zeros(1, uncertainty_levels);
 anlytcl_sigma_m_stim_HC = zeros(1, uncertainty_levels);
 anlytcl_sigma_m_stim_LC = zeros(1, uncertainty_levels);
-anlytcl_mad_m_stim = zeros(1, uncertainty_levels);
+anlytcl_mad_m_byOri   = zeros(uncertainty_levels, numel(orientations));
+anlytcl_mad_m_stim    = zeros(1, uncertainty_levels);
 anlytcl_mad_m_stim_HC = zeros(1, uncertainty_levels);
 anlytcl_mad_m_stim_LC = zeros(1, uncertainty_levels);
 
@@ -138,7 +139,7 @@ for i=1:uncertainty_levels
     modelParams.sigma_meta          = sigma_meta;
     modelParams.guessRate           = guessRate;
     
-    retData = getEstimatesPDFs(1:10:180, rvOriErr, modelParams);
+    retData = getEstimatesPDFs(orientations, rvOriErr, modelParams);
 %     retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
     
     anlytcl_sigma_m_stim(i)    = retData.E_sigma_m;
@@ -148,7 +149,8 @@ for i=1:uncertainty_levels
     anlytcl_mad_m_stim(i)      = retData.mad_m;
     anlytcl_mad_m_stim_HC(i)   = retData.mad_m_HC;
     anlytcl_mad_m_stim_LC(i)   = retData.mad_m_LC;
-
+    anlytcl_mad_m_byOri(i, :)  = retData.mad_m_by_ori';
+ 
 end
 
 %%
@@ -169,7 +171,8 @@ for i=1:n_uncertainty_levels
     modelParams.sigma_meta          = sigma_meta;
     modelParams.guessRate           = guessRate;
     
-    retData = getEstimatesPDFs(1:10:180, rvOriErr, modelParams);
+    % retData = getEstimatesPDFs(1:10:180, rvOriErr, modelParams);
+    retData = getEstimatesPDFs(orientations, rvOriErr, modelParams);
 %     retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
     
     subplot(2, n_uncertainty_levels/2, i)
@@ -184,6 +187,27 @@ for i=1:n_uncertainty_levels
     
     hold off
 end
+
+%% MAD by ori
+figure
+
+for i=1:n_uncertainty_levels
+    
+    x = squeeze( resp_err_all(i, :, :) );
+    madByOri = mad(x, 1, 2);
+
+    subplot(2, n_uncertainty_levels/2, i)
+    hold on
+    
+    scatter(orientations, madByOri)
+    plot(orientations, anlytcl_mad_m_byOri(i, :), LineWidth=1.5);
+    
+    xlabel("Orientation (deg)")
+    ylabel("MAD")
+    
+    hold off
+end
+
 
 %% Plot results
 

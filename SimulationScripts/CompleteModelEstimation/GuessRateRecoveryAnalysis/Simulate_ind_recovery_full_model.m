@@ -13,7 +13,7 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/')
 
 orientations     = linspace(0, 179, 10); %0:10:180; % 
-ntrials_per_ori  = 25; %1000;
+ntrials_per_ori  = 250; %1000;
 b                = linspace(0.1, 1.5, 6); % 1.2 % Choose b such that average noise level ranges from low to high (relative to internal noise level)
 a                = 0.67.*b; %0.67   % Does a depend upon b? Yes
 biasAmp          = 0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
@@ -50,7 +50,8 @@ confidence_report_all = zeros(uncertainty_levels, n_theta, ntrials_per_ori);
 % sigma_s = [8.0253, 13.1054, 13.4657, 25.9641, 30.2290, 36.0350]';
 % sigma_s = [7.7131, 11.268, 16.754, 25.546, 41.216, 45.754 ]';
 % sigma_s_stim = repmat(sigma_s, [1 n_theta]);
-sigma_s_stim = b' + a'*(abs(sind(2*orientations)));
+% sigma_s_stim = b' + a'*(abs(sind(2*orientations)));
+sigma_s_stim = b' + a'*(abs(sind(orientations - 90)));
 bias = biasAmp*sind(2*orientations); 
 
 for l=1:uncertainty_levels
@@ -194,8 +195,8 @@ for i=1:uncertainty_levels
     modelParams.sigma_meta          = opt_param_sigma_meta;
     modelParams.guessRate           = opt_param_guessrate;
     
-    % retData = getEstimatesPDFs(1:10:180, rvOriErr, modelParams);
-    retData = getEstimationsPDF_cov(1:10:180, rvOriErr, modelParams);
+    retData = getEstimatesPDFs(1:10:180, rvOriErr, modelParams);
+    % retData = getEstimationsPDF_cov(1:10:180, rvOriErr, modelParams);
     
     anlytcl_sigma_m_stim(i)    = retData.E_sigma_m;
     anlytcl_sigma_m_stim_HC(i) = retData.E_sigma_m_HC;
@@ -224,8 +225,8 @@ for i=1:n_uncertainty_levels
     modelParams.sigma_meta          = opt_param_sigma_meta;
     modelParams.guessRate           = opt_param_guessrate;
     
-%     retData = getEstimatesPDFs(1:10:180, rvOriErr, modelParams);
-    retData = getEstimationsPDF_cov(1:10:180, rvOriErr, modelParams);
+    retData = getEstimatesPDFs(1:10:180, rvOriErr, modelParams);
+    % retData = getEstimationsPDF_cov(1:10:180, rvOriErr, modelParams);
     
     subplot(2, n_uncertainty_levels/2, i)
     hold on

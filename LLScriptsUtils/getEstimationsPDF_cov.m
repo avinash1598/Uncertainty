@@ -17,48 +17,31 @@ internalNoiseSamplesCnt   = 1000;
 numOris                   = numel(stimOris);
 
 bias = biasAmp*sind(2*stimOris);
-sigma_s_stim = b + a.*(abs(sind(2*stimOris))); %sigma_s_stim = sigma_s_stim';
+% sigma_s_stim = b + a.*(abs(sind(2*stimOris))); %sigma_s_stim = sigma_s_stim';
+sigma_s_stim = b + a.*(abs(sind(stimOris - 90))); % as per human subjects
 
-% tic
 % Internal noise covaries with sensory noise
 scaleParam = scale;
 shapeParams = sigma_s_stim.^2 ./ scaleParam;
-% gammaSamples = zeros(numel(shapeParams), internalNoiseSamplesCnt);
-% % weighted_sigma_m_stim = zeros(numel(shapeParams), internalNoiseSamplesCnt);
+gammaSamples = zeros(numel(shapeParams), internalNoiseSamplesCnt);
+% weighted_sigma_m_stim = zeros(numel(shapeParams), internalNoiseSamplesCnt);
+
+for i = 1:numel(shapeParams)
+    shapeParam = shapeParams(i);
+    gammaSamples(i, :) = gaminv(linspace(1/internalNoiseSamplesCnt, 1 - 1/internalNoiseSamplesCnt, internalNoiseSamplesCnt), ...
+        shapeParam, scaleParam);
+
+    % weighted_sigma_m_stim(i, :) = gammaSamples(i, :).*gampdf(gammaSamples(i, :), shapeParam, scaleParam);
+end
+
+% N = internalNoiseSamplesCnt;
+% M = numel(shapeParams);
 % 
-% for i = 1:numel(shapeParams)
-%     shapeParam = shapeParams(i);
-%     gammaSamples(i, :) = gaminv(linspace(1/internalNoiseSamplesCnt, 1 - 1/internalNoiseSamplesCnt, internalNoiseSamplesCnt), ...
-%         shapeParam, scaleParam);
+% p = linspace(1/N, 1-1/N, N);
+% P = repmat(p, M, 1);
+% A = repmat(shapeParams(:), 1, N);
 % 
-%     % weighted_sigma_m_stim(i, :) = gammaSamples(i, :).*gampdf(gammaSamples(i, :), shapeParam, scaleParam);
-% end
-
-N = internalNoiseSamplesCnt;
-M = numel(shapeParams);
-
-p = linspace(1/N, 1-1/N, N);
-P = repmat(p, M, 1);
-A = repmat(shapeParams(:), 1, N);
-
-gammaSamples = gaminv(P, A, scaleParam);
-
-% elapsed_time = toc;
-% disp(['Execution time: ', num2str(elapsed_time), ' seconds']);
-
-
-%N = internalNoiseSamplesCnt;
-%M = numel(shapeParams);
-
-%p = linspace(1/N, 1-1/N, N);
-%P = repmat(p, M, 1);
-%A = repmat(shapeParams(:), 1, N);
-
-%gammaSamples = gaminv(P, A, scaleParam);
-
-% elapsed_time = toc;
-% disp(['Execution time: ', num2str(elapsed_time), ' seconds']);
-
+% gammaSamples = gaminv(P, A, scaleParam);
 
 % sigma_m_stim = sqrt( sigma_s_stim'.^2 + (gammaSamples).^2 ); % Measurement noise
 sigma_m_stim = sqrt( gammaSamples ); % Measurement noise
@@ -178,16 +161,17 @@ retData.E_sigma_m = sqrt( mean( est_sigma_m_stim.^2 ) );% + std(bias).^2 ;
 %% MAD
 retData.mad_m_stim_HC = est_mad_m_stim_HC;
 retData.mad_m_stim_LC = est_mad_m_stim_LC;
-retData.mad_m_stim = est_mad_m_stim;
+retData.mad_m_stim    = est_mad_m_stim;
 
-retData.mad_m_HC = ( sum( est_mad_m_stim_HC.*retData.pHC_stim )./sum(retData.pHC_stim) );
-retData.mad_m_LC = ( sum( est_mad_m_stim_LC.*retData.pLC_stim )./sum(retData.pLC_stim) );
-retData.mad_m      = mean( est_mad_m_stim); % + mad(bias)
+retData.mad_m_HC     = ( sum( est_mad_m_stim_HC.*retData.pHC_stim )./sum(retData.pHC_stim) );
+retData.mad_m_LC     = ( sum( est_mad_m_stim_LC.*retData.pLC_stim )./sum(retData.pLC_stim) );
+retData.mad_m        = mean( est_mad_m_stim); % + mad(bias)
+retData.mad_m_by_ori = est_mad_m_stim; % change 1
 
 %%
 % Stimulus dependent bias
 % retData.bias = biasAmp*sind(4*stimOris);
-retData.bias = biasAmp*sind(2*stimOris);
+retData.bias = bias; %biasAmp*sind(2*stimOris);
 
 % PDF for each orientation
 retData.rvOriErrs = rvOriErrs;
@@ -204,7 +188,7 @@ retData.analyticalPDF_HC = analyticalPDF_HC; % HC
 end
 
 
-% % PDF for individual orientations
+% % PDF for all orientations
 % function [pdf_s, pdfHC_s, pdfLC_s, sigma_s, sigmaHC_s, sigmaLC_s, mad_m_s, mad_m_HC_s, mad_m_LC_s] = getGaussianMixturePDF( ...
 %     x, sigma_m_stim, bias, pHC, pLC, guessRate, optimizationFlag)
 % % x = array of perceptual errors
@@ -336,21 +320,21 @@ p_X = exp(- (Z').^2 ./ (2*sigma_m_stim.^2 ) ) ./ sqrt(2*pi*sigma_m_stim.^2);
 pdf = sum(p_X, 2);
 pdf = pdf./trapz(x, pdf);
 pdf = (1 - guessRate)*pdf + guessRate*pdf_random_guesses;
-% pdf = pdf./trapz(x, pdf);
+pdf = pdf./trapz(x, pdf);
 
 % HC pdf
 p_X_HC = p_X.*pHC;
 pdfHC = sum(p_X_HC, 2);
 pdfHC = pdfHC./trapz(x, pdfHC);
 pdfHC = (1 - guessRate)*pdfHC + guessRate*pdf_random_guesses; 
-% pdfHC = pdfHC./trapz(x, pdfHC);
+pdfHC = pdfHC./trapz(x, pdfHC);
 
 % LC pdf
 p_X_LC = p_X.*pLC;
 pdfLC = sum(p_X_LC, 2);
 pdfLC = pdfLC./trapz(x, pdfLC);
 pdfLC = (1 - guessRate)*pdfLC + guessRate*pdf_random_guesses; 
-% pdfLC = pdfLC./trapz(x, pdfLC);
+pdfLC = pdfLC./trapz(x, pdfLC);
 
 %% Calculate std dev
 dx = x(2) - x(1); % Assuming uniform

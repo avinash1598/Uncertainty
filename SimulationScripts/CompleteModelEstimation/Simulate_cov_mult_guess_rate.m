@@ -13,7 +13,7 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
 
 orientations     = 0:15:175; %linspace(0, 180, 18); %0:10:180; % linspace(0, 180, 18);
-ntrials_per_ori  = 100; %250;
+ntrials_per_ori  = 25; %250;
 b                = linspace(1, 2.2, 6); % linspace(1, 2.2, 8); Note: different minimum noise level (0.1). Choose b such that average noise level ranges from low to high (relative to internal noise level)
 a                = 0.67.*b; %0.67.*b;   % Does a depend upon b? Yes
 biasAmp          = 0.5; %0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
@@ -25,7 +25,7 @@ Cc               = 0.5;
 % scale            = 343.3225;
 % sigma_meta       = 10.83;
 % Cc               = 0.05; 
-guessRate        = 0; %0.1; % While fitting try keeping it below 0.1 % For each trial with this prob sample uniformly from 0 to 179
+guessRate        = 0.0; %0.1; % While fitting try keeping it below 0.1 % For each trial with this prob sample uniformly from 0 to 179
 
 % In actual data correct for bias
 
@@ -43,8 +43,11 @@ confidence_report_all = zeros(uncertainty_levels, n_theta, ntrials_per_ori);
 % Stimulus dependent sensory noise
 % sigma_s = [15.5048, 19.7808, 24.9028, 30.5509, 34.0230, 37.4675]';
 % sigma_s_stim = repmat(sigma_s, [1 n_theta]);
-sigma_s_stim = b' + a'*(abs(sind(2*orientations)));
-bias         = biasAmp*sind(2*orientations); 
+% sigma_s_stim = b' + a'*(abs(sind(2*orientations)));
+% bias         = biasAmp*sind(2*orientations); 
+
+sigma_s_stim = b' + a'*(abs(sind(orientations - 90)));
+bias         = biasAmp*sind(2*orientations); % This remains the same
 
 for l=1:uncertainty_levels
     for i = 1:n_theta
@@ -137,10 +140,10 @@ for i=1:uncertainty_levels
     modelParams.sigma_meta          = sigma_meta;
     modelParams.guessRate           = guessRate;
     
-    tic
+    %tic
     retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams, true);
-    elapsed_time = toc;
-    disp(['Execution time: ', num2str(elapsed_time), ' seconds']);
+    %elapsed_time = toc;
+    %disp(['Execution time: ', num2str(elapsed_time), ' seconds']);
     
 %     tic
 %     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);

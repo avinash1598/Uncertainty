@@ -13,7 +13,7 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Utils/')
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/OptimizationUtils/')
 
 orientations     = 0:15:175; %linspace(0, 180, 18); %0:10:180; % linspace(0, 180, 18);
-ntrials_per_ori  = 250; %250;
+ntrials_per_ori  = 25; %250;
 b                = linspace(1, 2.2, 6); % linspace(1, 2.2, 8); Note: different minimum noise level (0.1). Choose b such that average noise level ranges from low to high (relative to internal noise level)
 a                = 0.67.*b; %0.67.*b;   % Does a depend upon b? Yes
 biasAmp          = 0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
@@ -130,15 +130,25 @@ data.params.guessRate             = guessRate;
 
 %% Optimize
 errBins = -90:0.1:90;
-result = Optimize(data, errBins, "cov");
 
-opt_param_sigma_s        = result.x(1:n_uncertainty_levels);
-opt_param_scale          = result.x(n_uncertainty_levels + 1);
-opt_param_sigma_meta     = result.x(n_uncertainty_levels + 2);
-opt_param_Cc             = result.x(n_uncertainty_levels + 3);
-opt_param_guessrate      = result.x(n_uncertainty_levels + 4);
+optParams.nStarts = 1;
+optParams.hyperParamC1 = 100;
+optParams.randomGuessModel = true;
+
+result = Optimize(data, errBins, "ind", [], optParams, 'reduced');
+
+%%
+[~, idx] = min(result.f);
+
+opt_param_sigma_s        = result.x(idx, 1:n_uncertainty_levels);
+opt_param_shape          = result.x(idx ,n_uncertainty_levels + 1);
+opt_param_scale          = result.x(idx, n_uncertainty_levels + 2);
+opt_param_sigma_meta     = result.x(idx, n_uncertainty_levels + 3);
+opt_param_Cc             = result.x(idx, n_uncertainty_levels + 4);
+opt_param_guessrate      = result.x(idx, n_uncertainty_levels + 5);
 
 gt_sigma_s    = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 );
+gt_shape      = shape;
 gt_scale      = scale;
 gt_sigma_meta = sigma_meta;
 gt_Cc         = Cc;
@@ -149,6 +159,7 @@ for i =1:n_uncertainty_levels
     fprintf("GT: %.4f, Fit: %.4f \n", gt_sigma_s(i), opt_param_sigma_s(i))
 end
 
+fprintf("GT: %.4f, Fit: %.4f \n", gt_shape, opt_param_shape)
 fprintf("GT: %.4f, Fit: %.4f \n", gt_scale, opt_param_scale)
 fprintf("GT: %.4f, Fit: %.4f \n", gt_sigma_meta, opt_param_sigma_meta)
 fprintf("GT: %.4f, Fit: %.4f \n", gt_Cc, opt_param_Cc)
@@ -173,12 +184,14 @@ for i=1:uncertainty_levels
 %     modelParams.guessRate           = guessRate;
 
     modelParams.sigma_s             = opt_param_sigma_s(i);
+    modelParams.shape               = opt_param_shape;
     modelParams.scale               = opt_param_scale;
     modelParams.Cc                  = opt_param_Cc;
     modelParams.sigma_meta          = opt_param_sigma_meta;
     modelParams.guessRate           = opt_param_guessrate;
     
-    retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
+%     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
+    retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
     
     anlytcl_sigma_m_stim(i)    = retData.E_sigma_m;
     anlytcl_sigma_m_stim_HC(i) = retData.E_sigma_m_HC;
@@ -206,12 +219,14 @@ for i=1:n_uncertainty_levels
 %     modelParams.guessRate           = guessRate;
     
     modelParams.sigma_s             = opt_param_sigma_s(i);
+    modelParams.shape               = opt_param_shape;
     modelParams.scale               = opt_param_scale;
     modelParams.Cc                  = opt_param_Cc;
     modelParams.sigma_meta          = opt_param_sigma_meta;
     modelParams.guessRate           = opt_param_guessrate;
     
-    retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
+%     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
+    retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
     
     subplot(2, n_uncertainty_levels/2, i)
     hold on

@@ -38,7 +38,8 @@ confidence_report_all = zeros(uncertainty_levels, n_theta, ntrials_per_ori);
 % Stimulus dependent sensory noise
 % sigma_s = [15.5048, 19.7808, 24.9028, 30.5509, 34.0230, 37.4675]';
 % sigma_s_stim = repmat(sigma_s, [1 n_theta]);
-sigma_s_stim = b' + a'*(abs(sind(2*orientations)));
+% sigma_s_stim = b' + a'*(abs(sind(2*orientations)));
+sigma_s_stim = b' + a'*(abs(sind(orientations - 90)));
 bias = biasAmp*sind(2*orientations); 
 
 for l=1:uncertainty_levels
@@ -115,9 +116,9 @@ data.params.guessRate             = guessRate;
 % save('modelContOriData_cov.mat', "data")
 
 %% Optimize
-errBins = -90:0.1:90;
+errBins = -90:0.5:90;
 
-optParams.nStarts = 1;
+optParams.nStarts = 10;
 optParams.hyperParamC1 = 0;
 optParams.randomGuessModel = true;
 
@@ -317,4 +318,14 @@ xlabel("\sigma_s(s) (sensory noise)")
 ylabel("MAD (measurement)")
 legend
 hold off
+
+
+%% STD dev
+std_by_ori = std(resp_err_all, 0, 3);
+
+figure
+for i = 1:n_uncertainty_levels
+    subplot(2, 3, i)
+    scatter(orientations, std_by_ori(i, :))
+end
 

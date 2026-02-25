@@ -5,13 +5,14 @@ clear all
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
 
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR31.mat'); % Tien
-data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR33.mat'); % Akash
+% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR33.mat'); % Akash
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB01.mat');   % Yichao
+data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB02.mat');   % Jonathan
 
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/Data/COR32.mat'); % Jiaming
 
 % formattedData = formatExpData(data);
-fltData = data.dat( data.dat.session > 0 , :); %data.dat;
+fltData = data.dat( data.dat.session < 2 , :); %data.dat;
 f.dat = fltData; %data.dat; %fltData;
 formattedData = formatExpData(f, false, true);
 rvOriErr = -90:3:90;
@@ -1102,6 +1103,9 @@ figure
 modelFun = @(params, ori) params(1) + ...
                                params(2) .* abs(sind(ori - 90));
 
+% modelFun = @(params, ori) params(1) + ...
+%                                params(2) .* abs(sind(2*ori));
+
 bs = zeros(1, n_uncertainty_levels);
 as = zeros(1, n_uncertainty_levels);
 
@@ -1125,6 +1129,7 @@ for i=1:n_uncertainty_levels
     subplot(2, 3, i)
     hold on
     plot( orientations, b_est + a_est*abs(sind(orientations - 90)), LineWidth=1.5)
+    % plot( orientations, b_est + a_est*abs(sind(2*orientations)), LineWidth=1.5)
     scatter(orientations, stdByOri(i, :))
     ylim([0 60])
     hold off
@@ -1132,6 +1137,18 @@ for i=1:n_uncertainty_levels
 end
 
 scale = as./bs;
+
+% MAD
+figure
+
+for i=1:n_uncertainty_levels
+
+    subplot(2, 3, i)
+    scatter(orientations, madByOri(i, :))
+    hold off
+
+end
+
 
 % %% Stats split by orientation
 % 

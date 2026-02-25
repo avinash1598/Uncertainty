@@ -1,6 +1,8 @@
-function plotFitResult_guessrate(data, modelParams, modelType)
+function plotFitResult_guessrate(data, modelParams, modelType, fullModel)
 
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
+if nargin < 4 && isempty(fullModel)
+    fullModel = false;
+end
 
 grpOriErr            = data.resp_err_all; 
 confReport           = data.confidence_report_all;
@@ -45,6 +47,11 @@ if modelType == "cov"
     param_Cc             = modelParams(n_uncertainty_levels + 3);
     param_guessrate      = modelParams(n_uncertainty_levels + 4);
 
+    if fullModel
+        param_sigma_ori_scale = modelParams(n_uncertainty_levels + 5);
+        param_bias            = modelParams(n_uncertainty_levels + 6);
+    end
+
 elseif modelType == "ind"
     param_sigma_s        = modelParams(1:n_uncertainty_levels);
     param_shape          = modelParams(n_uncertainty_levels + 1);
@@ -52,6 +59,12 @@ elseif modelType == "ind"
     param_sigma_meta     = modelParams(n_uncertainty_levels + 3);
     param_Cc             = modelParams(n_uncertainty_levels + 4);
     param_guessrate      = modelParams(n_uncertainty_levels + 5);
+
+    if fullModel
+        param_sigma_ori_scale = modelParams(n_uncertainty_levels + 6);
+        param_bias            = modelParams(n_uncertainty_levels + 7);
+    end
+
 else
     error("Invalid modelType")
 end
@@ -73,11 +86,28 @@ for i=1:n_uncertainty_levels
     mP.sigma_meta          = param_sigma_meta;
     mP.guessRate           = param_guessrate;
 
+    if fullModel
+        mP.b                   = param_sigma_s(i);
+        mP.a                   = param_sigma_ori_scale*param_sigma_s(i);
+        mP.biasAmp             = param_bias;
+    end
+
     if modelType == "ind"
         mP.shape = param_shape;
-        analyticalSol = getEstimatesPDFs_reduced_model(errBins, mP);
+
+        if fullModel
+            analyticalSol = getEstimatesPDFs(0:15:179, errBins, mP);
+        else
+            analyticalSol = getEstimatesPDFs_reduced_model(errBins, mP);
+        end
+
     elseif modelType == "cov"
-        analyticalSol = getEstimationsPDF_cov_reduced(errBins, mP);
+
+        if fullModel
+            analyticalSol = getEstimationsPDF_cov(0:15:179, errBins, mP);
+        else
+            analyticalSol = getEstimationsPDF_cov_reduced(errBins, mP);
+        end
     end
     
     anlytcl_sigma_m(i)    = analyticalSol.E_sigma_m;
@@ -230,5 +260,40 @@ ylabel("MAD (measurement)")
 legend
 hold off
 
+
+% Ori dependent variance
+figure
+
+stdByOri = data.stdByOri;
+% madByOri = data.madByOri;
+% bias = data.bias;
+orientations = data.orientations;
+b_opt = modelParams(1:n_uncertainty_levels);
+a_opt = modelParams(end-1).*b_opt;
+
+for i=1:n_uncertainty_levels
+
+    b_est = b_opt(i);
+    a_est = a_opt(i);
+    
+    subplot(2, 3, i)
+    hold on
+    plot( orientations, b_est + a_est*abs(sind(orientations - 90)), LineWidth=1.5, DisplayName="fit")
+    scatter(orientations, stdByOri(i, :))
+    % ylim([0 60])
+    hold off
+end
+
+% Bias
+figure
+
+bias = data.bias;
+biasAmp = modelParams(end);
+oriBias = biasAmp*sind(2*orientations);
+
+scatter(orientations, bias)
+hold on
+plot(orientations, oriBias)
+hold off
 
 end

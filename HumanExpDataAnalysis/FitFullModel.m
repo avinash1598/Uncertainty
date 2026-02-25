@@ -1,16 +1,16 @@
-close all
+% close all
 clear all
 
-addpath('C:\Users\avinash1598\Desktop\Uncertainty\ProcessModel\HumanExpDataAnalysis\Utils\')
-addpath('C:\Users\avinash1598\Desktop\Uncertainty\Uncertainty\ProcessModel\LLScriptsUtils\')
-addpath('C:\Users\avinash1598\Desktop\Uncertainty\ProcessModel\PlotUtils\')
-addpath('C:\Users\avinash1598\Desktop\Uncertainty\ProcessModel\Utils\')
-addpath('C:\Users\avinash1598\Desktop\Uncertainty\ProcessModel\OptimizationUtils\')
-addpath('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis\Utils\')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
 
 % expData            = load('Data\CORNFB01.mat'); % Yichao
-expData            = load('./Data/COR33.mat'); % Akash
-%expData            = load('./Data/COR31.mat'); % Tien
+% expData            = load('./Data/COR33.mat'); % Akash
+expData            = load('./Data/COR31.mat'); % Tien
 % expData            = load('./Data/COR32.mat'); % Jiaming
 
 fltData       = expData.dat( expData.dat.session > 0 , :); 
@@ -20,20 +20,22 @@ formattedData = formatExpData(f, false, false); % no de-baising, work with raw e
 %%
 errBins   = -90:3:90; % this is dx which might affect fitting. This value should be optimal. not too fine. not too coarse.
 
-optParams.nStarts = 10;
-optParams.hyperParamC1 = 0;
+optParams.nStarts = 1;
+optParams.hyperParamC1 = 0; % 10 or 100? Use 10 maybe to avoid overfitting
+optParams.hyperParamC2 = 0;
 optParams.randomGuessModel = true;
 
-result = Optimize(formattedData, errBins, "ind", [], optParams, "full");
+result = Optimize(formattedData, errBins, "cov", [], optParams, "full");
 
-% save('akash_full_model_ind.mat', 'result');
 %%
+% load('akash_full_model_ind_v2.mat');
+
 [~, idx] = min(result.f);
 
 n_uncertainty_levels = 6;
 
 opt_param_sigma_s         = result.x(idx, 1:n_uncertainty_levels);
-% opt_param_shape           = result.x(idx ,n_uncertainty_levels + 1);
+% opt_param_shape           = result.x(idx ,n_uncertainty_levels + 1-0);
 opt_param_scale           = result.x(idx ,n_uncertainty_levels + 2-1);
 opt_param_sigma_meta      = result.x(idx, n_uncertainty_levels + 3-1);
 opt_param_Cc              = result.x(idx, n_uncertainty_levels + 4-1);
@@ -54,6 +56,9 @@ fprintf("GR Fit: %.4f \n", opt_param_guessrate)
 fprintf("Ori scale Fit: %.4f \n", opt_param_sigma_ori_scale)
 fprintf("Bias Fit: %.4f \n", opt_param_bias)
 
-
 % full model - might not be nice for human subjects - might need more
 % customization
+
+%% TODO: plot
+modelParams = result.x(idx, :);
+plotFitResult_guessrate(formattedData, modelParams, "cov", true)

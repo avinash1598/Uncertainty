@@ -20,14 +20,16 @@ guessRate                 = modelParams.guessRate;
 internalNoiseSamplesCnt   = 1000;
 numOris                   = numel(stimOris);  
 
-bias = biasAmp*sind(2*stimOris);
+bias = biasAmp*sind(2*stimOris); % As per human subjects
+% sigma_s_stim = b + a.*(abs(sind(2*stimOris))); %sigma_s_stim = sigma_s_stim';
+sigma_s_stim = b + a.*(abs(sind(stimOris - 90))); % as per human subjects
 
+% Internal noise fluctuation
 shapeParam = shape;
 scaleParam = scale;
 gammaSamples = gaminv(linspace(1/internalNoiseSamplesCnt, 1 - 1/internalNoiseSamplesCnt, internalNoiseSamplesCnt), ...
     shapeParam, scaleParam);
 
-sigma_s_stim = b + a.*(abs(sind(2*stimOris))); %sigma_s_stim = sigma_s_stim';
 sigma_m_stim = sqrt( sigma_s_stim'.^2 + gammaSamples ); % Measurement noise
 
 % For each value of sigma_m_stim, find the probability of high
@@ -149,9 +151,10 @@ retData.mad_m_stim_HC = est_mad_m_stim_HC;
 retData.mad_m_stim_LC = est_mad_m_stim_LC;
 retData.mad_m_stim = est_mad_m_stim;
 
-retData.mad_m_HC = ( sum( est_mad_m_stim_HC.*retData.pHC_stim )./sum(retData.pHC_stim) );
-retData.mad_m_LC = ( sum( est_mad_m_stim_LC.*retData.pLC_stim )./sum(retData.pLC_stim) );
-retData.mad_m      = mean( est_mad_m_stim); % + mad(bias)
+retData.mad_m_HC     = ( sum( est_mad_m_stim_HC.*retData.pHC_stim )./sum(retData.pHC_stim) );
+retData.mad_m_LC     = ( sum( est_mad_m_stim_LC.*retData.pLC_stim )./sum(retData.pLC_stim) );
+retData.mad_m        = mean( est_mad_m_stim); % + mad(bias)
+retData.mad_m_by_ori = est_mad_m_stim; % change 1
 
 %%
 % Stimulus dependent bias

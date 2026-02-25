@@ -23,6 +23,9 @@ targetMADs     = metaData.targetMADs;
 targetMADs_HC  = metaData.targetMADs_HC;
 targetMADS_LC  = metaData.targetMADS_LC;
 hyperParamC1   = metaData.hyperParamC1;
+hyperParamC2   = metaData.hyperParamC2;
+orientations   = metaData.orientations;
+madByOri       = metaData.madByOri;
 
 currPdfFit_HC   = zeros(nLevels, numel(errBins));
 currPdfFit_LC   = zeros(nLevels, numel(errBins));
@@ -31,6 +34,7 @@ curr_pLC        = zeros(nLevels, 1);
 curr_mad_m      = zeros(nLevels, 1);
 curr_mad_m_HC   = zeros(nLevels, 1);
 curr_mad_m_LC   = zeros(nLevels, 1);
+curr_mad_m_stim   = zeros( nLevels, numel(orientations) );
 
 
 for i=1:nLevels
@@ -46,7 +50,10 @@ for i=1:nLevels
         modelParams.a             = param_sigma_ori_scale*param_sigma_s(i);
         modelParams.biasAmp       = param_bias;
         
-        retData = getEstimationsPDF_cov(0:15:179, errBins, modelParams, false);
+        %retData = getEstimationsPDF_cov(0:15:179, errBins, modelParams, false); % don't set to true
+        retData = getEstimationsPDF_cov(orientations, errBins, modelParams, false);
+
+        % curr_mad_m_stim(i, :) = retData.mad_m_by_ori;
     else
         % retData = getEstimationsPDF_cov_reduced(errBins, modelParams, false); % originally set to true
     end
@@ -63,13 +70,24 @@ end
 
 constraint = sum( ( curr_mad_m - targetMADs ).^2 ) + ...
     sum( ( curr_mad_m_HC - targetMADs_HC ).^2 ) + ...
-    sum( ( curr_mad_m_LC - targetMADS_LC ).^2 );
+    sum( ( curr_mad_m_LC - targetMADS_LC ).^2 ); 
+
+% if fitType == "full"
+%     constraint2 = sum( (curr_mad_m_stim - madByOri).^2, "all" );
+% end
 
 % NLL loss
 ll_HC = binned_err_HC .* log( currPdfFit_HC.*curr_pHC + eps );
 ll_LC = binned_err_LC .* log( currPdfFit_LC.*curr_pLC + eps );
 
 nll = - ( sum(ll_HC(:)) + sum(ll_LC(:)) ) + hyperParamC1*constraint;
+
+% if fitType == "full"
+%     nll = - ( sum(ll_HC(:)) + sum(ll_LC(:)) ) + hyperParamC1*constraint + hyperParamC2*constraint2;
+% else
+%     nll = - ( sum(ll_HC(:)) + sum(ll_LC(:)) ) + hyperParamC1*constraint;
+% end
+
 
 % fprintf('\n%.2f, %.2f \n',  - ( sum(ll_HC(:)) + sum(ll_LC(:)) ), hyperParamC1*constraint);
 

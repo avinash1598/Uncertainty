@@ -10,11 +10,13 @@ function result = Optimize(data, errBins, modelType, fltTrlIdx, optParams, fitTy
 
     if nargin < 5 || isempty(optParams)
         nStarts          = 20;
-        hyperParamC1     = 100;
+        hyperParamC1     = 10; % Hyperparameter for data metrics
+        hyperParamC2     = 10; % Hyperparameter for oblique effect
         randomGuessModel = true;
     else
         nStarts          = optParams.nStarts;
         hyperParamC1     = optParams.hyperParamC1;
+        hyperParamC2     = optParams.hyperParamC2;
         randomGuessModel = optParams.randomGuessModel;
     end
     
@@ -56,11 +58,15 @@ function result = Optimize(data, errBins, modelType, fltTrlIdx, optParams, fitTy
     metaData.targetMADs    = y_mad;
     metaData.targetMADs_HC = y_HC_mad;
     metaData.targetMADS_LC = y_LC_mad;
-%     metaData.targetMADs    = metrics.mads;
-%     metaData.targetMADs_HC = metrics.mads_HC;
-%     metaData.targetMADS_LC = metrics.mads_LC;
-    metaData.hyperParamC1  = hyperParamC1;
+    % metaData.targetMADs    = metrics.mads;
+    % metaData.targetMADs_HC = metrics.mads_HC;
+    % metaData.targetMADS_LC = metrics.mads_LC;
+    metaData.hyperParamC1      = hyperParamC1;
+    metaData.hyperParamC2      = hyperParamC2;
     metaData.randomGuessModel  = randomGuessModel;
+    metaData.stdByOri          = data.stdByOri;
+    metaData.madByOri          = data.madByOri;
+    metaData.orientations      = data.orientations';
     
     % Run multi-start optimization for cov model
     if fitType == "full"
@@ -84,7 +90,11 @@ else
     nParams = nan;
 end
 
-parpool;
+% Start pool only if none exists
+% p = gcp('nocreate');   
+% if isempty(p)
+%     parpool;           
+% end
 
 x_all = zeros(nStarts,nParams);
 f_all = zeros(nStarts,1);
@@ -106,14 +116,14 @@ parfor itr = 1:nStarts
             if model == "cov"
                 % params = [param_sigma_s param_scale param_sigma_meta param_Cc];
                 params = [param_sigma_s param_scale param_sigma_meta param_Cc param_guessrate];
-                objFun = @(x) computeNLLCov(x, metaData); % Objective function
+                objFun = @(x) computeNLLCov(x, metaData, 'reduced'); % Objective function
             
             elseif model == "ind"
-            
+                
                 param_shape = rand;
                 % params      = [param_sigma_s param_shape param_scale param_sigma_meta param_Cc];
                 params = [param_sigma_s param_shape param_scale param_sigma_meta param_Cc param_guessrate];
-                objFun = @(x) computeNLL(x, metaData); % Objective function
+                objFun = @(x) computeNLL(x, metaData, 'reduced'); % Objective function
             end
             
             % Bounds (ga requires finite bounds!)
@@ -150,7 +160,7 @@ parfor itr = 1:nStarts
             success = true;
 
         catch ME
-            % disp(ME)
+%             disp(ME)
         end
     end
 
@@ -176,16 +186,16 @@ else
     nParams = nan;
 end
 
-% Start pool only if none exists
-p = gcp('nocreate');   
-if isempty(p)
-    parpool;           
-end
+% % Start pool only if none exists
+% p = gcp('nocreate');   
+% if isempty(p)
+%     parpool;           
+% end
 
 x_all = zeros(nStarts,nParams);
 f_all = zeros(nStarts,1);
 
-parfor itr = 1:nStarts
+for itr = 1:nStarts
 
     fprintf( 'optimization itr: %d \n', itr) 
     success = false;
