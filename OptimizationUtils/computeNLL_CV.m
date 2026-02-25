@@ -1,4 +1,4 @@
-function nllData = computeNLL_CV(data, errBins, cv_data, optParams)
+function nllData = computeNLL_CV(data, errBins, cv_data, optParams, fitType)
 
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/')
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
@@ -11,6 +11,12 @@ else
     nStarts          = optParams.nStarts;
     hyperParamC1     = optParams.hyperParamC1;
     randomGuessModel = optParams.randomGuessModel;
+end
+
+if ~isempty(fitType)
+    assert(fitType == "reduced" || fitType == "full")
+else
+    fitType = "reduced";
 end
 
 % Exp data
@@ -87,7 +93,7 @@ for h=1:nPerm
         fitParamsCovModel = cv_data.resultsListCov{h, k}.x;
         [val, idx]        = min(fvalsCovModel);
         params            = fitParamsCovModel(idx, :);
-        nllCov            = computeNLLCov(params, metaData);
+        nllCov            = computeNLLCov(params, metaData, fitType);
 
         minfvalsCov = [minfvalsCov val];
         nllCovModel = [nllCovModel nllCov];
@@ -101,7 +107,7 @@ for h=1:nPerm
         fitParamsIndModel = cv_data.resultsListInd{h, k}.x;
         [val, idx]        = min(fvalsIndModel);
         params            = fitParamsIndModel(idx, :);
-        nllInd            = computeNLL(params, metaData);
+        nllInd            = computeNLL(params, metaData, fitType);
         
         minfvalsInd = [minfvalsInd val];
         nllIndModel = [nllIndModel nllInd];

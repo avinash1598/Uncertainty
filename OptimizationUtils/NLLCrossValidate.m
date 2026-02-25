@@ -1,4 +1,4 @@
-function cv_result = NLLCrossValidate(data, errBins, K, nPerm, optParams)
+function cv_result = NLLCrossValidate(data, errBins, K, nPerm, optParams, fitType)
 
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/OptimizationUtils/')
 
@@ -23,10 +23,10 @@ cvTrlData      = cell(nPerm, K);
 foldIDs        = cell(nPerm,1);
 perms          = cell(nPerm,1);
 
-parpool;
+% parpool;
 
 % Run k-fold cross-validation
-parfor h=1:nPerm %parfor
+for h=1:nPerm %parfor
     perm = randperm(N);
     foldID = mod(perm-1, K) + 1;
     
@@ -43,12 +43,12 @@ parfor h=1:nPerm %parfor
         trainIdx = ~testIdx;
         
         % Run multi-start optimization for cov model
-        results = Optimize(data, errBins, "cov", trainIdx, optParams);
+        results = Optimize(data, errBins, "cov", trainIdx, optParams, fitType);
         % resultsListCov{idx} = results;
         resultsListCov{h, k} = results;
         
         % Run multi-start optimization for ind model
-        results = Optimize(data, errBins, "ind", trainIdx, optParams);
+        results = Optimize(data, errBins, "ind", trainIdx, optParams, fitType);
         % resultsListInd{idx} = results;
         resultsListInd{h, k} = results;
 
@@ -56,13 +56,6 @@ parfor h=1:nPerm %parfor
         % distribution maybe and then decide.
     end
 end
-
-Data.resultsListCov = resultsListCov;
-Data.resultsListInd = resultsListInd;
-Data.perms          = perms;
-Data.foldIDs        = foldIDs;
-
-save('checkpoint.mat','Data')
 
 for h=1:nPerm
     foldID = foldIDs{h};

@@ -49,7 +49,7 @@ for i=1:nLevels
 
         retData = getEstimatesPDFs(1:10:180, errBins, modelParams, false);
     else
-        retData = getEstimatesPDFs_reduced_model(errBins, modelParams, false); % originally set to true
+        % retData = getEstimatesPDFs_reduced_model(errBins, modelParams, false); % originally set to true
     end
     
     % Data for NLL

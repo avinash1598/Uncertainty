@@ -1,5 +1,5 @@
 function result = Optimize(data, errBins, modelType, fltTrlIdx, optParams, fitType)
-
+    
     assert(modelType == "cov" || modelType == "ind")
 
     if ~isempty(fitType)
@@ -18,10 +18,7 @@ function result = Optimize(data, errBins, modelType, fltTrlIdx, optParams, fitTy
         randomGuessModel = optParams.randomGuessModel;
     end
     
-    fprintf("Params - nStarts: %d, hyperparam c1: %d", nStarts, hyperParamC1);
-
-    addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
-    addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
+    fprintf('Params - nStarts: %d, hyperparam c1: %d Fittype: %s \n', nStarts, hyperParamC1, fitType);
     
     trlData              = convertToTrialData(data);
     grpOriErr            = trlData.grpOriErr;
@@ -87,10 +84,12 @@ else
     nParams = nan;
 end
 
+parpool;
+
 x_all = zeros(nStarts,nParams);
 f_all = zeros(nStarts,1);
 
-for itr = 1:nStarts
+parfor itr = 1:nStarts
 
     fprintf( 'optimization itr: %d \n', itr) 
     success = false;
@@ -151,7 +150,7 @@ for itr = 1:nStarts
             success = true;
 
         catch ME
-            disp(ME)
+            % disp(ME)
         end
     end
 
@@ -177,7 +176,11 @@ else
     nParams = nan;
 end
 
-parpool;
+% Start pool only if none exists
+p = gcp('nocreate');   
+if isempty(p)
+    parpool;           
+end
 
 x_all = zeros(nStarts,nParams);
 f_all = zeros(nStarts,1);
@@ -238,14 +241,14 @@ parfor itr = 1:nStarts
                 disp("fminconn failed")
                 error('fminconn failed: %s', output.message)
             end
-
+            
             x_all(itr, :) = optimalValues;
             f_all(itr)    = fval;
     
             success = true;
 
         catch ME
-            disp(ME)
+            % disp(ME)
         end
     end
 

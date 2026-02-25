@@ -1,10 +1,10 @@
 close all
 clear all
 
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/LLScriptsUtils/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/PlotUtils/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Utils/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/OptimizationUtils/')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\LLScriptsUtils/')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\PlotUtils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\Utils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\OptimizationUtils\')
 
 % modelData                            = load('../modelContOriData_cov.mat');
 modelData                            = load('../modelContOriData.mat');
@@ -12,19 +12,25 @@ modelData                            = load('../modelContOriData.mat');
 % modelData.data.confidence_report_all = modelData.data.confidence_report_all;
 
 %% Cross-validate
-errBins   = -90:0.1:90;
-cv_result = NLLCrossValidate(modelData.data, errBins);
-save('./CV_Data/cross_validation_ind_model.mat', 'cv_result'); % TODO: chnage it to ind model
-
-%% NLL on test data
-errBins   = -90:0.1:90;
-
-% cv_result = load('./CV_Data/cross_validation_ind_model.mat');
+errBins   = -90:0.5:90;
 
 optParams.nStarts = 20;
 optParams.hyperParamC1 = 0;
 optParams.randomGuessModel = true;
-nllData = computeNLL_CV(modelData.data, errBins, cv_result.cv_result); 
+
+cv_result = NLLCrossValidate(modelData.data, errBins, 5, 6, optParams, 'full');
+save('./CV_Data/cross_validation_full_ind_model.mat', 'cv_result'); % TODO: chnage it to ind model
+
+%% NLL on test data
+errBins   = -90:0.5:90;
+
+cv_result = load('./CV_Data/cross_validation_full_ind_model.mat');
+
+optParams.nStarts = 20;
+optParams.hyperParamC1 = 0;
+optParams.randomGuessModel = true;
+
+nllData = computeNLL_CV(modelData.data, errBins, cv_result.cv_result, optParams, 'full'); 
 
 %
 figure

@@ -48,7 +48,7 @@ for i=1:nLevels
         
         retData = getEstimationsPDF_cov(0:15:179, errBins, modelParams, false);
     else
-        retData = getEstimationsPDF_cov_reduced(errBins, modelParams, false); % originally set to true
+        % retData = getEstimationsPDF_cov_reduced(errBins, modelParams, false); % originally set to true
     end
     
     % Data for NLL
