@@ -170,7 +170,7 @@ retData.mad_m_by_ori = est_mad_m_stim; % change 1
 
 %%
 % Stimulus dependent bias
-% retData.bias = biasAmp*sind(4*stimOris);
+% retData.bias = biasAmp*sind(2*stimOris);
 retData.bias = bias; %biasAmp*sind(2*stimOris);
 
 % PDF for each orientation

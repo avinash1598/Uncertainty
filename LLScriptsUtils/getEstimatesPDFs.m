@@ -17,7 +17,7 @@ scale                     = modelParams.scale;
 Cc                        = modelParams.Cc;
 sigma_meta                = modelParams.sigma_meta;
 guessRate                 = modelParams.guessRate;
-internalNoiseSamplesCnt   = 1000;
+internalNoiseSamplesCnt   = 1000; %400, 1000;
 numOris                   = numel(stimOris);  
 
 bias = biasAmp*sind(2*stimOris); % As per human subjects
@@ -52,21 +52,6 @@ pLC_all = cdf_vals;
 mean_cdf_val = mean(cdf_vals(:));
 mean_cdf_val_stim = mean(cdf_vals, 2);
 
-% % Weight prob HC and LC by prob of corresponding sample
-% % Note: result of this will literally be same as pLC_byOri when no 
-% % of gammasamples are large. 
-% pdf = gampdf(gammaSamples, shapeParam, scaleParam);
-% y = cdf_vals.*pdf;
-% I1 = trapz(gammaSamples, y, 2); % Integrate y with non-uniform spacing gammaSamples
-% % I2 = trapz(stimOris, I1*(1/numOris));
-% 
-% % Is I2 correct way to find the expectation of PLC? I2 might be equal to
-% % mean_cdf_val only when no of thetas is large. Run simulations to see what
-% % is analytical solution. I would assume mean_cdf_val to be the correct solution.
-% 
-% diff = abs(mean_cdf_val_stim - I1);
-% assert(all(diff < 0.1), 'Sanity check failed: not all differences < 0.1'); % Make sure the two values are same (just a sanity check for WLLN)
-
 % Compute PDF for each orientation
 analyticalPDF_stim    = zeros(numOris, numel(rvOriErrs));
 analyticalPDF_stim_HC = zeros(numOris, numel(rvOriErrs));
@@ -79,6 +64,21 @@ est_sigma_m_stim_LC = zeros(numOris, 1);
 est_mad_m_stim = zeros(numOris, 1);
 est_mad_m_stim_HC = zeros(numOris, 1);
 est_mad_m_stim_LC = zeros(numOris, 1);
+
+% [pdf_s, pdfHC_s, pdfLC_s, sigma_s, sigmaHC_s, sigmaLC_s, mad_m_s, mad_m_HC_s, mad_m_LC_s] = getGaussianMixturePDF( ...
+%     rvOriErrs, sigma_m_stim, bias, pHC_all, pLC_all, guessRate, optimizationFlag);
+% 
+% analyticalPDF_stim(:)    = pdf_s;
+% analyticalPDF_stim_HC(:) = pdfHC_s;
+% analyticalPDF_stim_LC(:) = pdfLC_s;
+% 
+% est_sigma_m_stim(:)    = sigma_s;
+% est_sigma_m_stim_HC(:) = sigmaHC_s;
+% est_sigma_m_stim_LC(:) = sigmaLC_s;
+% 
+% est_mad_m_stim(:)    = mad_m_s;
+% est_mad_m_stim_HC(:) = mad_m_HC_s;
+% est_mad_m_stim_LC(:) = mad_m_LC_s;
 
 for i = 1:numOris
     [pdf, pdfHC, pdfLC, sigma_, sigmaHC, sigmaLC, mad_m, mad_m_HC, mad_m_LC] = getGaussianMixturePDF(rvOriErrs, ...
@@ -164,12 +164,12 @@ retData.bias = bias;
 % PDF for each orientation
 retData.rvOriErrs = rvOriErrs;
 
-retData.analyticalPDF_stim = analyticalPDF_stim;
+retData.analyticalPDF_stim    = analyticalPDF_stim;
 retData.analyticalPDF_stim_LC = analyticalPDF_stim_LC; % LC
 retData.analyticalPDF_stim_HC = analyticalPDF_stim_HC; % HC
 
 % PDF combined across all orientations
-retData.analyticalPDF = analyticalPDF;
+retData.analyticalPDF    = analyticalPDF;
 retData.analyticalPDF_LC = analyticalPDF_LC; % LC
 retData.analyticalPDF_HC = analyticalPDF_HC; % HC
 
@@ -206,6 +206,10 @@ pdfLC = (1 - guessRate)*pdfLC + guessRate*pdf_random_guesses;
 pdfLC = pdfLC./trapz(x, pdfLC);
 
 %% Calculate std dev
+
+% Note: this way of calculating is not right for STD as function of
+% orientation. Consider actual mean values for ori dependent std.
+
 dx = x(2) - x(1); % Assuming uniform
 % warning("Make sure error bins are uniformly spaced")
 mu = 0; %sum( x.*pdf'*dx );
@@ -283,3 +287,144 @@ end
 
 end
 
+
+% % PDF for all orientations
+% function [pdf_s, pdfHC_s, pdfLC_s, sigma_s, sigmaHC_s, sigmaLC_s, mad_m_s, mad_m_HC_s, mad_m_LC_s] = getGaussianMixturePDF( ...
+%     x, sigma_m_stim, bias, pHC, pLC, guessRate, optimizationFlag)
+% % x = array of perceptual errors
+% 
+% pdf_random_guesses = ones(size(x)) / (numel(x) + 1);
+% pdf_random_guesses = pdf_random_guesses./trapz(x, pdf_random_guesses); 
+% % pdf_random_guesses = pdf_random_guesses';
+% 
+% Z = x - bias';
+% A = reshape(Z, size(sigma_m_stim, 1), numel(x), 1);
+% B = reshape(sigma_m_stim, size(sigma_m_stim, 1), 1, size(sigma_m_stim, 2));
+% p_X = exp(- (A).^2 ./ (2*B.^2 ) ) ./ sqrt(2*pi*B.^2);
+% 
+% pdf = sum(p_X, 3);
+% area = trapz(x, pdf, 2);
+% pdf = pdf./area;
+% pdf = (1 - guessRate)*pdf + guessRate*pdf_random_guesses; 
+% % pdf = pdf./trapz(x, pdf);
+% % pdf_s = pdf;
+% 
+% % HC pdf
+% A = reshape(pHC, size(pHC, 1), 1, size(pHC, 2));
+% p_X_HC = p_X.*A;
+% pdfHC = sum(p_X_HC, 3);
+% pdfHC = pdfHC./trapz(x, pdfHC, 2);
+% pdfHC = (1 - guessRate)*pdfHC + guessRate*pdf_random_guesses; 
+% % pdfHC = pdfHC./trapz(x, pdfHC);
+% % pdfHC_s = pdfHC;
+% 
+% % LC pdf
+% A = reshape(pLC, size(pLC, 1), 1, size(pLC, 2));
+% p_X_LC = p_X.*A;
+% pdfLC = sum(p_X_LC, 3);
+% pdfLC = pdfLC./trapz(x, pdfLC, 2);
+% pdfLC = (1 - guessRate)*pdfLC + guessRate*pdf_random_guesses; 
+% % pdfLC = pdfLC./trapz(x, pdfLC);
+% % pdfLC_s = pdfLC;
+% 
+% %% Calculate std dev
+% dx = x(2) - x(1); % Assuming uniform
+% % warning("Make sure error bins are uniformly spaced")
+% mu = 0; %sum( x.*pdf*dx );
+% sigma_s = sqrt( sum( ((x - mu).^2).*pdf*dx, 2 ) );
+% 
+% % For HC
+% mu = 0; %sum( x.*pdfHC*dx );
+% sigmaHC_s = sqrt( sum( ((x - mu).^2).*pdfHC*dx, 2 ) );
+% 
+% % For LC
+% mu = 0; %sum( x.*pdfLC*dx );
+% sigmaLC_s = sqrt( sum( ((x - mu).^2).*pdfLC*dx, 2 ) );
+% 
+% % Return data
+% pdf_s   = pdf;
+% pdfHC_s = pdfHC;
+% pdfLC_s = pdfLC;
+% 
+% %% MAD from PDF
+% % Calculate metric only after optimization is complete
+% if ~optimizationFlag
+%     
+%     % Note: This calculation is based on two assumption - symmetry and
+%     % median of zero (but median is not zero for different orientation)
+%     % But I think the assumption is that median is zero from perspective of
+%     % analytical solution
+% 
+%     % Note: for 
+%     dx  = x(2)-x(1);
+%     
+%     % Combined
+%     F   = cumsum(pdf, 2) * dx;
+%     F   = F ./ F(:, end);
+%     % HC
+%     F_HC = cumsum(pdfHC, 2) * dx;
+%     F_HC = F_HC ./ F_HC(:, end);
+%     % LC
+%     F_LC = cumsum(pdfLC, 2) * dx;
+%     F_LC = F_LC ./ F_LC(:, end);
+% 
+%     nRows      = size(F,1);
+%     mad_m_s    = zeros(nRows,1);
+%     mad_m_HC_s = zeros(nRows,1);
+%     mad_m_LC_s = zeros(nRows,1);
+%     
+%     for i = 1:nRows
+%         if ~isnan(F(i,end))
+%             % Combined
+%             %[Funiq, idx] = unique(F(i, :));
+%             %xuniq = x(idx);
+%             %median_val = interp1(Funiq, xuniq, 0.5); % For uncertainty level dependent
+%             median_val = 0; % For aggregate stats
+%             mad_fun = @(d) (interp1(x, F(i,:), median_val + d) ...
+%                           - interp1(x, F(i,:), median_val - d)) - 0.5;
+%             d0 = (x(end) - x(1))/4;
+%             mad_m_s(i) = fzero(mad_fun, d0);
+%         else
+%             mad_m_s(i) = nan;
+%         end
+%         
+%         if ~isnan(F_HC(i,end))
+%             % HC
+%             %[Funiq, idx] = unique(F_HC(i, :));
+%             %xuniq = x(idx);
+%             %median_val = interp1(Funiq, xuniq, 0.5);
+%             median_val = 0; % For aggregate stats
+%             mad_fun = @(d) (interp1(x, F_HC(i,:), median_val + d) ...
+%                           - interp1(x, F_HC(i,:), median_val - d)) - 0.5;
+%             d0 = (x(end) - x(1))/4;
+%             mad_m_HC_s(i) = fzero(mad_fun, d0);
+%         else
+%             mad_m_HC_s(i) = nan;
+%         end
+%         
+% 
+%         if ~isnan(F_LC(i,end))
+%             % LC
+%             %[Funiq, idx] = unique(F_LC(i, :));
+%             %xuniq = x(idx);
+%             %median_val = interp1(Funiq, xuniq, 0.5);
+%             median_val = 0; % For aggregate stats
+%             mad_fun = @(d) (interp1(x, F_LC(i,:), median_val + d) ...
+%                           - interp1(x, F_LC(i,:), median_val - d)) - 0.5;
+%             d0 = (x(end) - x(1))/4;
+%             mad_m_LC_s(i) = fzero(mad_fun, d0);
+%         else
+%             mad_m_LC_s(i) = nan;
+%         end
+% 
+%     end
+% 
+% else
+%     mad_m_s = 0;
+%     mad_m_HC_s = 0;
+%     mad_m_LC_s = 0;
+% end
+% 
+% end
+% 
+% 

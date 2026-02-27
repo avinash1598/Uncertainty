@@ -2,10 +2,12 @@ function trlData = convertToTrialData(data)
 
 grpOriErr            = data.resp_err_all; 
 confReport           = data.confidence_report_all;
+stimOris             = data.stimOri;
 n_uncertainty_levels = size(grpOriErr, 1);
 
 grpOriErr    = reshape(grpOriErr, n_uncertainty_levels, []);
 confReport   = reshape(confReport, n_uncertainty_levels, []);
+stimOris     = reshape(stimOris, n_uncertainty_levels, []);
 
 levels               = 1:n_uncertainty_levels;
 uncertainty_levels   = repmat(levels', [1 size(grpOriErr, 2)]);
@@ -34,12 +36,14 @@ y_LC_mad = mad(resp_LC, 1, 2);
 trlErrors            = grpOriErr(:);
 trlConfReports       = confReport(:);
 trlUncertaintyLevels = uncertainty_levels(:);
+trlStimOris          = stimOris(:);
 
 trlData.grpOriErr            = grpOriErr;
 trlData.n_uncertainty_levels = n_uncertainty_levels;
 trlData.trlErrors            = trlErrors;
 trlData.trlConfReports       = trlConfReports;
 trlData.trlUncertaintyLevels = trlUncertaintyLevels;
+trlData.trlStimOris          = trlStimOris;
 
 trlData.y_std     = y_std;
 trlData.y_HC_std  = y_HC_std;

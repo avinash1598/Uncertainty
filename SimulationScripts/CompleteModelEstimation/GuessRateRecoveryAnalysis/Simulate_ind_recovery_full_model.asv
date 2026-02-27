@@ -20,7 +20,7 @@ biasAmp          = 0.5;       % Does bias depend upon uncertainty level? No. Thi
 shape            = 2;
 scale            = 0.5;
 sigma_meta       = 0.2;
-Cc               = 0.7; % 0.7 
+Cc               = 0.5; % 0.7 
 guessRate        = 0.1;
 
 % biasAmp          = 0; %0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
@@ -117,6 +117,7 @@ data.stdByOri               = squeeze( std(resp_err_all, 0, 3) );
 data.madByOri               = squeeze( mad(resp_err_all, 1, 3) );
 data.orientations           = orientations';
 
+
 data.params.sigma_s_reduced_model = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 )';
 data.params.b                     = b;
 data.params.a                     = a;
@@ -128,20 +129,14 @@ data.params.Cc                    = Cc;
 data.params.guessRate             = guessRate;
 
 %% Optimize
-errBins = -90:0.5:90;
+errBins = -90:0.:90;
 
-optParams.nStarts = 30;
+optParams.nStarts = 1;
 optParams.hyperParamC1 = 0;
 optParams.hyperParamC2 = 0;
 optParams.randomGuessModel = true;
 
 result = Optimize(data, errBins, "ind", [], optParams, "full");
-
-%%
-% res.data = data;
-% res.result = result;
-% res.errBins = errBins;
-% save('ind_data_full_model_fit_method_2_25_trials.dat', 'res');
 
 %%
 [~, idx] = min(result.f);
@@ -193,7 +188,7 @@ anlytcl_mad_m_stim = zeros(1, uncertainty_levels);
 anlytcl_mad_m_stim_HC = zeros(1, uncertainty_levels);
 anlytcl_mad_m_stim_LC = zeros(1, uncertainty_levels);
 
-for i=1:uncertainty_levels
+for i=6 %1:uncertainty_levels
     rvOriErr = errBins;
     
     modelParams.b                   = opt_param_sigma_s(i);
@@ -238,7 +233,7 @@ for i=1:n_uncertainty_levels
     retData = getEstimatesPDFs(1:10:180, rvOriErr, modelParams, false);
     % retData = getEstimationsPDF_cov(1:10:180, rvOriErr, modelParams);
     
-    subplot(3, n_uncertainty_levels, i)
+    subplot(2, n_uncertainty_levels/2, i)
     hold on
     
     grpOriErr = resp_err_all_reshaped(i, :);
@@ -249,37 +244,6 @@ for i=1:n_uncertainty_levels
     ylabel("count")
     
     hold off
-
-    % HC
-    subplot(3, n_uncertainty_levels, 6+i)
-    hold on
-    
-    confReport_ = confidence_report_all_reshaped(i, :);
-    
-    errHC = grpOriErr(confReport_ == 1);
-    histogram(errHC, rvOriErr, Normalization="pdf");
-    plot(rvOriErr, retData.analyticalPDF_HC, LineWidth=1.5);
-    
-    xlabel("Orientation (deg)")
-    ylabel("count")
-    title("HC")
-    
-    hold off
-
-    % LC
-    subplot(3, n_uncertainty_levels, 12+i)
-    hold on
-    
-    errHC = grpOriErr(confReport_ == 0);
-    histogram(errHC, rvOriErr, Normalization="pdf");
-    plot(rvOriErr, retData.analyticalPDF_LC, LineWidth=1.5);
-    
-    xlabel("Orientation (deg)")
-    ylabel("count")
-    title("LC")
-    
-    hold off
-
 end
 
 %% Plot results

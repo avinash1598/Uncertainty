@@ -140,10 +140,10 @@ for i=1:uncertainty_levels
     modelParams.sigma_meta          = sigma_meta;
     modelParams.guessRate           = guessRate;
     
-    %tic
+    tic
     retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams, true);
-    %elapsed_time = toc;
-    %disp(['Execution time: ', num2str(elapsed_time), ' seconds']);
+    elapsed_time = toc;
+    disp(['Execution time: ', num2str(elapsed_time), ' seconds']);
     
 %     tic
 %     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);

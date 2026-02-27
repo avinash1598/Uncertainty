@@ -14,7 +14,7 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 
 % orientations     = linspace(0, 179, 30); %0:10:180; % 
 orientations     = linspace(0, 179, 10); % Alert!!!! This has impact on quality of analytical solution
-ntrials_per_ori  = 100; %1000;
+ntrials_per_ori  = 2000; %1000;
 b                = linspace(0.1, 1.5, 6); % 1.2 % Choose b such that average noise level ranges from low to high (relative to internal noise level)
 a                = 0.67.*b; %0.67   % Does a depend upon b? Yes
 % biasAmp          = 0; %10       % Does bias depend upon uncertainty level? No. This bias level seems okay.
@@ -24,17 +24,17 @@ a                = 0.67.*b; %0.67   % Does a depend upon b? Yes
 % Cc               = 0.109; 
 % guessRate        = 0;
 
-biasAmp          = 0.5; %0.5; % problem at 2       % Does bias depend upon uncertainty level? No. This bias level seems okay.
+biasAmp          = 2; %0.5; %0.5; % problem at 2       % Does bias depend upon uncertainty level? No. This bias level seems okay.
 shape            = 2;
 scale            = 0.5; %0.5;
 sigma_meta       = 0.2;
-Cc               = 0.7; 
-guessRate        = 0.08;
+Cc               = 0.7; %0.7
+guessRate        = 0.1; %0.08;
 
 % Preallocate arrays
 n_theta                  = numel(orientations);
 uncertainty_levels       = numel(b);
-n_uncertainty_levels     = numel(b);
+% n_uncertainty_levels     = numel(b);
 
 % Only record data which would actually be recorded during experiment
 theta_true_all        = zeros(uncertainty_levels, n_theta, ntrials_per_ori);
@@ -127,7 +127,7 @@ anlytcl_mad_m_stim_HC = zeros(1, uncertainty_levels);
 anlytcl_mad_m_stim_LC = zeros(1, uncertainty_levels);
 
 for i=1:uncertainty_levels
-    rvOriErr = -90:0.1:90;
+    rvOriErr = -90:0.5:90;
     
     modelParams.b                   = b(i);
     modelParams.a                   = a(i);
@@ -139,13 +139,19 @@ for i=1:uncertainty_levels
     modelParams.sigma_meta          = sigma_meta;
     modelParams.guessRate           = guessRate;
     
-    retData = getEstimatesPDFs(orientations, rvOriErr, modelParams);
-%     retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
+    tic
+    [~] = getEstimatesPDFs(orientations, rvOriErr, modelParams, true);
+    %[~] = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
+    elapsed_time = toc;
+    disp(['Execution time: ', num2str(elapsed_time), ' seconds']);
     
+    retData = getEstimatesPDFs(orientations, rvOriErr, modelParams, false);
+    % retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
+
     anlytcl_sigma_m_stim(i)    = retData.E_sigma_m;
     anlytcl_sigma_m_stim_HC(i) = retData.E_sigma_m_HC;
     anlytcl_sigma_m_stim_LC(i) = retData.E_sigma_m_LC;
-
+    
     anlytcl_mad_m_stim(i)      = retData.mad_m;
     anlytcl_mad_m_stim_HC(i)   = retData.mad_m_HC;
     anlytcl_mad_m_stim_LC(i)   = retData.mad_m_LC;
@@ -172,10 +178,10 @@ for i=1:n_uncertainty_levels
     modelParams.guessRate           = guessRate;
     
     % retData = getEstimatesPDFs(1:10:180, rvOriErr, modelParams);
-    retData = getEstimatesPDFs(orientations, rvOriErr, modelParams);
+    retData = getEstimatesPDFs(orientations, rvOriErr, modelParams, false);
 %     retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
     
-    subplot(2, n_uncertainty_levels/2, i)
+    subplot(3, n_uncertainty_levels, i)
     hold on
     
     grpOriErr = resp_err_all_reshaped(i, :);
@@ -184,6 +190,36 @@ for i=1:n_uncertainty_levels
     
     xlabel("Orientation (deg)")
     ylabel("count")
+    
+    hold off
+
+    % HC
+    subplot(3, n_uncertainty_levels, 6+i)
+    hold on
+    
+    confReport_ = confidence_report_all_reshaped(i, :);
+    
+    errHC = grpOriErr(confReport_ == 1);
+    histogram(errHC, rvOriErr, Normalization="pdf");
+    plot(rvOriErr, retData.analyticalPDF_HC, LineWidth=1.5);
+    
+    xlabel("Orientation (deg)")
+    ylabel("count")
+    title("HC")
+    
+    hold off
+
+    % LC
+    subplot(3, n_uncertainty_levels, 12+i)
+    hold on
+    
+    errHC = grpOriErr(confReport_ == 0);
+    histogram(errHC, rvOriErr, Normalization="pdf");
+    plot(rvOriErr, retData.analyticalPDF_LC, LineWidth=1.5);
+    
+    xlabel("Orientation (deg)")
+    ylabel("count")
+    title("LC")
     
     hold off
 end

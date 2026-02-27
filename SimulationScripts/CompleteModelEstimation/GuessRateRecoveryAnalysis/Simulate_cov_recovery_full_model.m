@@ -13,7 +13,7 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Utils/')
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/OptimizationUtils/')
 
 orientations     = 0:15:175; %linspace(0, 180, 18); %0:10:180; % linspace(0, 180, 18);
-ntrials_per_ori  = 100; %250;
+ntrials_per_ori  = 25; %250;
 b                = linspace(1, 2.2, 6); % linspace(1, 2.2, 8); Note: different minimum noise level (0.1). Choose b such that average noise level ranges from low to high (relative to internal noise level)
 a                = 0.67.*b; %0.67.*b;   % Does a depend upon b? Yes
 biasAmp          = 0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
@@ -101,6 +101,10 @@ data.stimOri                = theta_true_all;
 data.reportedOri            = theta_resp_all;
 data.resp_err_all           = resp_err_all;
 data.confidence_report_all  = confidence_report_all;
+data.stdByOri               = squeeze( std(resp_err_all, 0, 3) );
+data.madByOri               = squeeze( mad(resp_err_all, 1, 3) );
+data.orientations           = orientations';
+
 % data.err         = resp_err_all;
 % data.confReport  = confidence_report_all;
 
@@ -118,11 +122,19 @@ data.params.guessRate             = guessRate;
 %% Optimize
 errBins = -90:0.5:90;
 
-optParams.nStarts = 10;
+optParams.nStarts = 30;
 optParams.hyperParamC1 = 0;
+optParams.hyperParamC2 = 0;
 optParams.randomGuessModel = true;
 
-result = Optimize(data, errBins, "cov", [], optParams, "full");
+result = Optimize(data, errBins, "cov", [], optParams, 'full');
+
+%%
+res.data = data;
+res.result = result;
+res.errBins = errBins;
+save('cov_data_full_model_fit_method_2_25_trials.dat', 'res');
+
 
 %%
 [~, idx] = min(result.f);
@@ -177,6 +189,7 @@ for i=1:uncertainty_levels
     
     modelParams.b                   = opt_param_sigma_s(i);
     modelParams.a                   = gt_sigma_ori_scale*opt_param_sigma_s(i);
+    modelParams.sigma_s             = opt_param_sigma_s(i);
     modelParams.biasAmp             = opt_param_bias;
     modelParams.scale               = opt_param_scale;
     modelParams.Cc                  = opt_param_Cc;
@@ -189,8 +202,8 @@ for i=1:uncertainty_levels
 %     modelParams.sigma_meta          = opt_param_sigma_meta;
 %     modelParams.guessRate           = opt_param_guessrate;
     
-    retData = getEstimationsPDF_cov(0:10:180, rvOriErr, modelParams);
-    % retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
+    retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams);
+%     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
     
     anlytcl_sigma_m_stim(i)    = retData.E_sigma_m;
     anlytcl_sigma_m_stim_HC(i) = retData.E_sigma_m_HC;
@@ -212,13 +225,15 @@ for i=1:n_uncertainty_levels
     
     modelParams.b                   = opt_param_sigma_s(i);
     modelParams.a                   = gt_sigma_ori_scale*opt_param_sigma_s(i);
+    modelParams.sigma_s             = opt_param_sigma_s(i);
     modelParams.biasAmp             = opt_param_bias;
     modelParams.scale               = opt_param_scale;
     modelParams.Cc                  = opt_param_Cc;
     modelParams.sigma_meta          = opt_param_sigma_meta;
     modelParams.guessRate           = opt_param_guessrate;
     
-    retData = getEstimationsPDF_cov(0:10:180, rvOriErr, modelParams);
+    retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams);
+%     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
     
     subplot(2, n_uncertainty_levels/2, i)
     hold on

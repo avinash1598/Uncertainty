@@ -7,7 +7,7 @@ function result = Optimize(data, errBins, modelType, fltTrlIdx, optParams, fitTy
     else
         fitType = "reduced";
     end
-
+    
     if nargin < 5 || isempty(optParams)
         nStarts          = 20;
         hyperParamC1     = 10; % Hyperparameter for data metrics
@@ -28,8 +28,10 @@ function result = Optimize(data, errBins, modelType, fltTrlIdx, optParams, fitTy
     trlErrors            = trlData.trlErrors;
     trlConfReports       = trlData.trlConfReports;
     trlUncertaintyLevels = trlData.trlUncertaintyLevels;
-
+    trlStimOris          = trlData.trlStimOris;
+    
     warning("This is not computed on filtered data. But maybe this is the right approach since this is th ground truth.")
+    
     y_mad      = trlData.y_mad;
     y_HC_mad   = trlData.y_HC_mad;
     y_LC_mad   = trlData.y_LC_mad;
@@ -38,18 +40,36 @@ function result = Optimize(data, errBins, modelType, fltTrlIdx, optParams, fitTy
         trlErrors            = trlErrors(fltTrlIdx);
         trlConfReports       = trlConfReports(fltTrlIdx);
         trlUncertaintyLevels = trlUncertaintyLevels(fltTrlIdx);
+        trlStimOris          = trlStimOris(fltTrlIdx);
     end
     
     % Compute mad on filtered data directly
-%     metrics = computeMetricsFromTrlData(trlErrors, ...
-%         trlConfReports, trlUncertaintyLevels);
-
-    binnedData = buildBinnedData( ...
-        n_uncertainty_levels, ...
-        errBins, ...
-        trlErrors, ...
-        trlConfReports, ...
-        trlUncertaintyLevels);
+    % metrics = computeMetricsFromTrlData(trlErrors, ...
+    %     trlConfReports, trlUncertaintyLevels);
+    
+    uniqOrientations     = data.orientations;
+    
+    if fitType == "full"
+        binnedData = buildBinnedData( ...
+            n_uncertainty_levels, ...
+            errBins, ...
+            trlErrors, ...
+            trlConfReports, ...
+            trlUncertaintyLevels, ...
+            trlStimOris, ...
+            uniqOrientations, ...
+            true);
+    else
+%         binnedData = buildBinnedData( ...
+%             n_uncertainty_levels, ...
+%             errBins, ...
+%             trlErrors, ...
+%             trlConfReports, ...
+%             trlUncertaintyLevels, ...
+%             trlStimOris, ...
+%             uniqOrientations, ...
+%             false);
+    end
     
     metaData.n_levels      = n_uncertainty_levels;
     metaData.errBins       = errBins;
@@ -91,10 +111,10 @@ else
 end
 
 % Start pool only if none exists
-% p = gcp('nocreate');   
-% if isempty(p)
-%     parpool;           
-% end
+p = gcp('nocreate');   
+if isempty(p)
+    parpool;           
+end
 
 x_all = zeros(nStarts,nParams);
 f_all = zeros(nStarts,1);
@@ -135,7 +155,7 @@ parfor itr = 1:nStarts
             
             options = optimoptions('fmincon', ...
                 'Display', 'iter', ...
-                'Algorithm', 'sqp', ...          
+                'Algorithm', 'sqp', ... % % 'Algorithm', 'sqp', ...    interior-point
                 'MaxIterations', 1000, ...
                 'MaxFunctionEvaluations', 20000);
             
@@ -160,7 +180,7 @@ parfor itr = 1:nStarts
             success = true;
 
         catch ME
-%             disp(ME)
+            disp(ME)
         end
     end
 
@@ -186,16 +206,16 @@ else
     nParams = nan;
 end
 
-% % Start pool only if none exists
-% p = gcp('nocreate');   
-% if isempty(p)
-%     parpool;           
-% end
+% Start pool only if none exists
+p = gcp('nocreate');   
+if isempty(p)
+    parpool;           
+end
 
 x_all = zeros(nStarts,nParams);
 f_all = zeros(nStarts,1);
 
-for itr = 1:nStarts
+parfor itr = 1:nStarts
 
     fprintf( 'optimization itr: %d \n', itr) 
     success = false;
@@ -258,7 +278,7 @@ for itr = 1:nStarts
             success = true;
 
         catch ME
-            % disp(ME)
+            disp(ME)
         end
     end
 
