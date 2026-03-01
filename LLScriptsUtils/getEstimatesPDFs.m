@@ -17,7 +17,7 @@ scale                     = modelParams.scale;
 Cc                        = modelParams.Cc;
 sigma_meta                = modelParams.sigma_meta;
 guessRate                 = modelParams.guessRate;
-internalNoiseSamplesCnt   = 1000; %400, 1000;
+internalNoiseSamplesCnt   = 500; %1000; %400, 1000;
 numOris                   = numel(stimOris);  
 
 bias = biasAmp*sind(2*stimOris); % As per human subjects

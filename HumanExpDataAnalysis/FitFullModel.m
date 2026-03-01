@@ -8,6 +8,13 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/')
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
 
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis/Utils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\LLScriptsUtils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\PlotUtils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\Utils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\OptimizationUtils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis\Utils\')
+
 % expData            = load('Data\CORNFB01.mat'); % Yichao
 % expData            = load('./Data/COR33.mat'); % Akash
 expData            = load('./Data/COR31.mat'); % Tien
@@ -20,12 +27,12 @@ formattedData = formatExpData(f, false, false); % no de-baising, work with raw e
 %%
 errBins   = -90:3:90; % this is dx which might affect fitting. This value should be optimal. not too fine. not too coarse.
 
-optParams.nStarts = 1;
+optParams.nStarts = 10;
 optParams.hyperParamC1 = 0; % 10 or 100? Use 10 maybe to avoid overfitting
 optParams.hyperParamC2 = 0;
 optParams.randomGuessModel = true;
 
-result = Optimize(formattedData, errBins, "cov", [], optParams, "full");
+result = Optimize(formattedData, errBins, "ind", [], optParams, "full");
 
 %%
 % load('akash_full_model_ind_v2.mat');
@@ -35,20 +42,20 @@ result = Optimize(formattedData, errBins, "cov", [], optParams, "full");
 n_uncertainty_levels = 6;
 
 opt_param_sigma_s         = result.x(idx, 1:n_uncertainty_levels);
-% opt_param_shape           = result.x(idx ,n_uncertainty_levels + 1-0);
-opt_param_scale           = result.x(idx ,n_uncertainty_levels + 2-1);
-opt_param_sigma_meta      = result.x(idx, n_uncertainty_levels + 3-1);
-opt_param_Cc              = result.x(idx, n_uncertainty_levels + 4-1);
-opt_param_guessrate       = result.x(idx, n_uncertainty_levels + 5-1);
-opt_param_sigma_ori_scale = result.x(idx, n_uncertainty_levels + 6-1);
-opt_param_bias            = result.x(idx, n_uncertainty_levels + 7-1);
+opt_param_shape           = result.x(idx ,n_uncertainty_levels + 1-0);
+opt_param_scale           = result.x(idx ,n_uncertainty_levels + 2-0);
+opt_param_sigma_meta      = result.x(idx, n_uncertainty_levels + 3-0);
+opt_param_Cc              = result.x(idx, n_uncertainty_levels + 4-0);
+opt_param_guessrate       = result.x(idx, n_uncertainty_levels + 5-0);
+opt_param_sigma_ori_scale = result.x(idx, n_uncertainty_levels + 6-0);
+opt_param_bias            = result.x(idx, n_uncertainty_levels + 7-0);
 
 % Display parameters
 for i =1:n_uncertainty_levels
     fprintf("Fit: %.4f \n", opt_param_sigma_s(i))
 end
 
-%fprintf("Shape Fit: %.4f \n", opt_param_shape)
+fprintf("Shape Fit: %.4f \n", opt_param_shape)
 fprintf("Scale Fit: %.4f \n", opt_param_scale)
 fprintf("Meta Fit: %.4f \n", opt_param_sigma_meta)
 fprintf("Cc Fit: %.4f \n", opt_param_Cc)
@@ -61,4 +68,4 @@ fprintf("Bias Fit: %.4f \n", opt_param_bias)
 
 %% TODO: plot
 modelParams = result.x(idx, :);
-plotFitResult_guessrate(formattedData, modelParams, "cov", true)
+plotFitResult_guessrate(formattedData, modelParams, "ind", true)

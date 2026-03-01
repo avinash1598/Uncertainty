@@ -121,6 +121,7 @@ for i=1:n_uncertainty_levels
     analyticalSols{i}     = analyticalSol;
 end
 
+
 % Arrange in increasing order of sigma_s
 [~, idxSorted] = sort(param_sigma_s);
 
@@ -131,24 +132,24 @@ for i=1:n_uncertainty_levels
 
     idx = idxSorted(i);
 
-    subplot(2, n_uncertainty_levels/2, i);
-    hold on;
+    subplot(2, n_uncertainty_levels/2, i)
+    hold on
     
     y = pdf_stim_LC(idx, :);
     scatter(errBins, y(:), 'filled', DisplayName="LC");
-    plot(errBins, analyticalSols{idx}.analyticalPDF_LC, HandleVisibility="off", LineWidth=1.5);
+    plot(errBins, analyticalSols{idx}.analyticalPDF_LC, HandleVisibility="off", LineWidth=1.5)
     
     y = pdf_stim_HC(idx, :);
     scatter(errBins, y(:), 'filled', DisplayName="HC");
-    plot(errBins, analyticalSols{idx}.analyticalPDF_HC, HandleVisibility="off", LineWidth=1.5);
+    plot(errBins, analyticalSols{idx}.analyticalPDF_HC, HandleVisibility="off", LineWidth=1.5)
     
-    %xline(0, LineStyle="--"); Probalamatic line
-    xlabel("Error (deg)");
-    ylabel("count");
-    title("")
+    xline(0, LineStyle="--")
+    xlabel("Error (deg)")
+    ylabel("count")
+    % title("")
 
-    legend;
-    hold off;
+    legend
+    hold off
 
 end
 

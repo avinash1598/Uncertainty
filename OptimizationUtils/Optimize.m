@@ -278,7 +278,7 @@ parfor itr = 1:nStarts
             success = true;
 
         catch ME
-            disp(ME)
+            %disp(ME)
         end
     end
 

@@ -127,13 +127,14 @@ optParams.hyperParamC1 = 0;
 optParams.hyperParamC2 = 0;
 optParams.randomGuessModel = true;
 
-result = Optimize(data, errBins, "cov", [], optParams, 'full');
+%result = Optimize(data, errBins, "cov", [], optParams, 'full');
+result = Optimize(data, errBins, "ind", [], optParams, 'full');
 
 %%
 res.data = data;
 res.result = result;
 res.errBins = errBins;
-save('cov_data_full_model_fit_method_2_25_trials.dat', 'res');
+save('cov_data_ind_fit_full_model_fit_method_2_25_trials.dat', 'res');
 
 
 %%

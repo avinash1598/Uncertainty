@@ -14,7 +14,7 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 
 % orientations     = linspace(0, 179, 30); %0:10:180; % 
 orientations     = linspace(0, 179, 10); % Alert!!!! This has impact on quality of analytical solution
-ntrials_per_ori  = 2000; %1000;
+ntrials_per_ori  = 25; %1000;
 b                = linspace(0.1, 1.5, 6); % 1.2 % Choose b such that average noise level ranges from low to high (relative to internal noise level)
 a                = 0.67.*b; %0.67   % Does a depend upon b? Yes
 % biasAmp          = 0; %10       % Does bias depend upon uncertainty level? No. This bias level seems okay.
@@ -24,7 +24,7 @@ a                = 0.67.*b; %0.67   % Does a depend upon b? Yes
 % Cc               = 0.109; 
 % guessRate        = 0;
 
-biasAmp          = 2; %0.5; %0.5; % problem at 2       % Does bias depend upon uncertainty level? No. This bias level seems okay.
+biasAmp          = 0.5; %0.5; %0.5; % problem at 2       % Does bias depend upon uncertainty level? No. This bias level seems okay.
 shape            = 2;
 scale            = 0.5; %0.5;
 sigma_meta       = 0.2;
@@ -103,6 +103,10 @@ data.stimOri                = theta_true_all;
 data.reportedOri            = theta_resp_all;
 data.resp_err_all           = resp_err_all;
 data.confidence_report_all  = confidence_report_all;
+data.stdByOri               = squeeze( std(resp_err_all, 0, 3) );
+data.madByOri               = squeeze( mad(resp_err_all, 1, 3) );
+data.orientations           = orientations';
+
 
 data.params.sigma_s_reduced_model = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 )';
 data.params.b                     = b;
@@ -114,7 +118,7 @@ data.params.sigma_meta            = sigma_meta;
 data.params.Cc                    = Cc;
 data.params.guessRate             = guessRate;
 
-% save('modelContOriData.mat', "data")
+save('modelContOriData.mat', "data")
 
 
 %% Get analytical solution

@@ -54,14 +54,9 @@ for i=1:nLevels
         modelParams.b             = param_sigma_s(i);
         modelParams.a             = param_sigma_ori_scale*param_sigma_s(i);
         modelParams.biasAmp       = param_bias;
-    
-    if fitType == "full"
-        modelParams.b             = param_sigma_s(i);
-        modelParams.a             = param_sigma_ori_scale*param_sigma_s(i);
-        modelParams.biasAmp       = param_bias;
         
         retData = getEstimationsPDF_cov(orientations, errBins, modelParams, true); % Seems like setting this to false makes things slow
-
+        
         currPdfFit_HC(i, :, :) = retData.analyticalPDF_stim_HC;
         currPdfFit_LC(i, :, :) = retData.analyticalPDF_stim_LC;
         curr_pHC(i, :)         = retData.pHC_stim;
