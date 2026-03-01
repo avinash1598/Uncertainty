@@ -68,13 +68,13 @@ for h=1:nPerm
         trainData.trlErrors            = trlErrors(trainIdx);
         trainData.trlConfReports       = trlConfReports(trainIdx);
         trainData.trlUncertaintyLevels = trlUncertaintyLevels(trainIdx);
-
+        
         testData.trlErrors            = trlErrors(testIdx);
         testData.trlConfReports       = trlConfReports(testIdx);
         testData.trlUncertaintyLevels = trlUncertaintyLevels(testIdx);
-
+        
         cvTrlData{h, k}.trainData = trainData;
-        cvTrlData{h, k}.testData = testData;
+        cvTrlData{h, k}.testData  = testData;
         cvTrlData{h, k}.n_uncertainty_levels = n_uncertainty_levels;
     end
 end

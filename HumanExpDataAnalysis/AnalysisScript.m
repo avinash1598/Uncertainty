@@ -6,13 +6,13 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR31.mat'); % Tien
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR33.mat'); % Akash
-% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB01.mat');   % Yichao
-data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB02.mat');   % Jonathan
+data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB01.mat');   % Yichao
+% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB02.mat');   % Jonathan
 
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/Data/COR32.mat'); % Jiaming
 
 % formattedData = formatExpData(data);
-fltData = data.dat( data.dat.session < 2 , :); %data.dat;
+fltData = data.dat( data.dat.session < 4 , :); %data.dat;
 f.dat = fltData; %data.dat; %fltData;
 formattedData = formatExpData(f, false, true);
 rvOriErr = -90:3:90;
@@ -1065,9 +1065,16 @@ bias = formattedData.bias;
 orientations = formattedData.orientations;
 
 figure
+subplot(2, 2, 1)
 plot(orientations, bias)
 xlabel("Orientation")
 ylabel("Mean error")
+title("Orientation bias")
+
+subplot(2, 2, 2)
+plot(orientations, formattedData.bias_median)
+xlabel("Orientation")
+ylabel("Median error")
 title("Orientation bias")
 
 figure
@@ -1076,7 +1083,7 @@ stdByOri = formattedData.stdByOri;
 madByOri = formattedData.madByOri;
 
 for i = 1:n_uncertainty_levels
-    subplot(1, 2, 1)
+    subplot(2, 2, 1)
     hold on
     plot(orientations, stdByOri(i, :), LineWidth=0.5, DisplayName=""+i)
     plot(orientations, mean(stdByOri, 1), LineWidth=2, HandleVisibility="off")
@@ -1085,7 +1092,7 @@ for i = 1:n_uncertainty_levels
     legend
     hold off
     
-    subplot(1, 2, 2)
+    subplot(2, 2, 2)
     hold on
     plot(orientations, madByOri(i, :), LineWidth=0.5, DisplayName=""+i)
     plot(orientations, mean(madByOri, 1), LineWidth=2, HandleVisibility="off")
@@ -1131,6 +1138,9 @@ for i=1:n_uncertainty_levels
     plot( orientations, b_est + a_est*abs(sind(orientations - 90)), LineWidth=1.5)
     % plot( orientations, b_est + a_est*abs(sind(2*orientations)), LineWidth=1.5)
     scatter(orientations, stdByOri(i, :))
+    title(sprintf("Uncertainty level %d", i))
+    xlabel("orientation")
+    ylabel("STD(Raw error)")
     ylim([0 60])
     hold off
 
@@ -1145,6 +1155,8 @@ for i=1:n_uncertainty_levels
 
     subplot(2, 3, i)
     scatter(orientations, madByOri(i, :))
+    xlabel("orientation")
+    ylabel("MAD(Raw error)")
     hold off
 
 end

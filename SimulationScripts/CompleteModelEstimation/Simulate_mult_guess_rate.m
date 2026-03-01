@@ -13,7 +13,7 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
 
 % orientations     = linspace(0, 179, 30); %0:10:180; % 
-orientations     = linspace(0, 179, 10); % Alert!!!! This has impact on quality of analytical solution
+orientations     = 0:15:175; %linspace(0, 179, 10); % Alert!!!! This has impact on quality of analytical solution
 ntrials_per_ori  = 25; %1000;
 b                = linspace(0.1, 1.5, 6); % 1.2 % Choose b such that average noise level ranges from low to high (relative to internal noise level)
 a                = 0.67.*b; %0.67   % Does a depend upon b? Yes
@@ -24,7 +24,7 @@ a                = 0.67.*b; %0.67   % Does a depend upon b? Yes
 % Cc               = 0.109; 
 % guessRate        = 0;
 
-biasAmp          = 0.5; %0.5; %0.5; % problem at 2       % Does bias depend upon uncertainty level? No. This bias level seems okay.
+biasAmp          = 0.5; %0.5; %2; %0.5; %0.5; % problem at 2       % Does bias depend upon uncertainty level? No. This bias level seems okay.
 shape            = 2;
 scale            = 0.5; %0.5;
 sigma_meta       = 0.2;
@@ -44,6 +44,7 @@ confidence_report_all = zeros(uncertainty_levels, n_theta, ntrials_per_ori);
 % Simulation loop
 % Stimulus dependent sensory noise
 sigma_s_stim = b' + a'*(abs(sind(( orientations - 90 ) )));
+% sigma_s_stim = b' + a'*(abs(sind(( 2*orientations ) )));
 bias = biasAmp*sind(2*orientations); 
 
 for l=1:uncertainty_levels
@@ -143,14 +144,14 @@ for i=1:uncertainty_levels
     modelParams.sigma_meta          = sigma_meta;
     modelParams.guessRate           = guessRate;
     
-    tic
-    [~] = getEstimatesPDFs(orientations, rvOriErr, modelParams, true);
-    %[~] = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
-    elapsed_time = toc;
-    disp(['Execution time: ', num2str(elapsed_time), ' seconds']);
+%     tic
+%     [~] = getEstimatesPDFs(orientations, rvOriErr, modelParams, true);
+%     %[~] = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
+%     elapsed_time = toc;
+%     disp(['Execution time: ', num2str(elapsed_time), ' seconds']);
     
     retData = getEstimatesPDFs(orientations, rvOriErr, modelParams, false);
-    % retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
+    %retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
 
     anlytcl_sigma_m_stim(i)    = retData.E_sigma_m;
     anlytcl_sigma_m_stim_HC(i) = retData.E_sigma_m_HC;
@@ -159,7 +160,7 @@ for i=1:uncertainty_levels
     anlytcl_mad_m_stim(i)      = retData.mad_m;
     anlytcl_mad_m_stim_HC(i)   = retData.mad_m_HC;
     anlytcl_mad_m_stim_LC(i)   = retData.mad_m_LC;
-    anlytcl_mad_m_byOri(i, :)  = retData.mad_m_by_ori';
+    %anlytcl_mad_m_byOri(i, :)  = retData.mad_m_by_ori';
  
 end
 
@@ -183,7 +184,7 @@ for i=1:n_uncertainty_levels
     
     % retData = getEstimatesPDFs(1:10:180, rvOriErr, modelParams);
     retData = getEstimatesPDFs(orientations, rvOriErr, modelParams, false);
-%     retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
+    %retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams, false);
     
     subplot(3, n_uncertainty_levels, i)
     hold on

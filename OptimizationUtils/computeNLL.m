@@ -11,6 +11,8 @@ param_sigma_meta      = params(nLevels + 3);
 param_Cc              = params(nLevels + 4);
 param_guessrate       = params(nLevels + 5);
 
+% warning("guess rate set to zero.")
+
 if fitType == "full"
     param_sigma_ori_scale = params(nLevels + 6);
     param_bias            = params(nLevels + 7);
@@ -94,7 +96,6 @@ end
 % NLL loss
 ll_HC = binned_err_HC .* log( currPdfFit_HC.*curr_pHC + eps );
 ll_LC = binned_err_LC .* log( currPdfFit_LC.*curr_pLC + eps ); 
-
 nll = - ( sum(ll_HC(:)) + sum(ll_LC(:)) );
 
 % if fitType == "full"

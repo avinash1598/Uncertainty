@@ -8,7 +8,7 @@ function binnedData = buildBinnedData( ...
     orientations, ...
     binnedByOri)
 
-if nargin < 8 && isempty(binnedByOri)
+if nargin < 6 || isempty(binnedByOri)
     binnedByOri = false;
 end
 

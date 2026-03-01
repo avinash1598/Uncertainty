@@ -5,7 +5,7 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/HumanExpDa
 
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/Data/COR31.mat'); % Tien
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/Data/COR32.mat'); % Jiaming
-data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/Data/COR33.mat');   % Akash
+data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR33.mat');   % Akash
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/ExpScript/CORNFB01.mat');   % Yichao
 
 %% Format data
@@ -15,7 +15,7 @@ formattedData = formatExpData(f, false, false);  % Keep sortByMAD to false (it i
 
 %% Get analytical solution for cov and independent model
 % cr_data = load("cross_validation_tien.mat");
-cr_data = load("cross_validation_akash.mat");
+cr_data = load("./CV_Data/cross_validation_akash.mat");
 nPerm   = numel( cr_data.Data_.foldIDs );
 K       = numel( cr_data.Data_.resultsListCov ) / nPerm;
 n       = numel( cr_data.Data_.resultsListCov );

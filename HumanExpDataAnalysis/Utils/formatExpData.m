@@ -22,8 +22,9 @@ rawOriError_S = mod(rawOriError_S + 90, 180) - 90;
 rawOriError = data.dat.rawOriError;
 
 % Estiamte orientation dependent bias
-stimSummary = groupsummary(data.dat, {'stimOri'}, {'mean', 'std'}, 'rawOriError');
+stimSummary = groupsummary(data.dat, {'stimOri'}, {'mean', 'std', @(x) median(x)}, 'rawOriError');
 bias        = stimSummary.mean_rawOriError;
+bias_median = stimSummary.fun1_rawOriError;
 
 if debias
     % debias
@@ -141,6 +142,7 @@ retData.theta_true_all_S      = theta_true_all_S;
 retData.resp_err_all_S        = resp_err_all_S;
 retData.resp_err_all_S        = resp_err_all_S;
 retData.bias                  = bias;
+retData.bias_median           = bias_median;
 retData.stdByOri              = stdByOri;
 retData.madByOri              = madByOri;
 retData.orientations          = orientations;

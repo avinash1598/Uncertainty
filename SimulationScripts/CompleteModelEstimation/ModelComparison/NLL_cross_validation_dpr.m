@@ -3,9 +3,12 @@ clear all
 
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Scripts/CompleteModelEstimation/LL_scripts/')
 
-modelData            = load('../modelContOriData_cov.mat');
-grpOriErr            = modelData.data.err; 
-confReport           = modelData.data.confReport;
+% modelData            = load('../modelContOriData_cov.mat');
+modelData            = load('../modelContOriData.mat');
+% grpOriErr            = modelData.data.err; 
+% confReport           = modelData.data.confReport;
+grpOriErr            = modelData.data.resp_err_all; 
+confReport           = modelData.data.confidence_report_all;
 n_uncertainty_levels = size(grpOriErr, 1);
 
 grpOriErr    = reshape(grpOriErr, n_uncertainty_levels, []);
@@ -85,7 +88,7 @@ save('cross_validation_cov.mat', 'Data_');
 %% TODO: just run on test data. Do not rerun the whole thing
 %% NLL of test dataset
 
-cr_data = load('cross_validation_cov.mat');
+cr_data = load('./CV_Data/cross_validation_ind.mat');
 nPerm   = numel( cr_data.Data_.foldIDs );
 K       = numel( cr_data.Data_.resultsListCov ) / nPerm;
 n       = numel( cr_data.Data_.resultsListCov );
@@ -104,6 +107,10 @@ fvalsInd = zeros(K*nPerm*30, 1);
 minfvalsCov = zeros(K*nPerm, 1);
 minfvalsInd = zeros(K*nPerm, 1);
 
+minFValCovModel = intmax;
+minFValIndModel = intmax;
+paramsCovModel = [];
+paramsIndModel = [];
 
 for h=1:nPerm
     foldID = foldIDs{h};
@@ -144,6 +151,11 @@ for h=1:nPerm
         
         fvalsCov( ( ( K*(h-1) + k - 1)*30 + 1) : (K*(h-1) + k)*30 ) = fvalsCovModel;
         
+        if val < minFValCovModel
+            paramsCovModel  = params;
+            minFValCovModel = val;
+        end
+
         % ind model
         fvalsIndModel     = Data_.resultsListInd{K*(h-1) + k}.f;
         fitParamsIndModel = Data_.resultsListInd{K*(h-1) + k}.x;
@@ -156,6 +168,11 @@ for h=1:nPerm
         
         fvalsInd( ( (K*(h-1) + k - 1)*30 + 1) : (K*(h-1) + k)*30 ) = fvalsIndModel;
         
+        if val < minFValIndModel
+            paramsIndModel  = params;
+            minFValIndModel = val;
+        end
+
         deltaNLL(K*(h-1) + k) = nllInd - nllCov; % negative value better for cov data - this is better
     end
 end
@@ -200,6 +217,13 @@ ylabel("Count")
 xlabel("NLL")
 legend
 title("bestfit fvals (train dataset)")
+
+%%
+modelParams = [paramsCovModel 0];
+plotFitResult_guessrate(modelData.data, modelParams, "cov", errBins, false)
+
+modelParams = [paramsIndModel 0];
+plotFitResult_guessrate(modelData.data, modelParams, "ind", errBins, false)
 
 
 %% Fucntions

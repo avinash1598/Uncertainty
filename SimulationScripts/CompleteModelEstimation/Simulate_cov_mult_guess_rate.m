@@ -140,15 +140,15 @@ for i=1:uncertainty_levels
     modelParams.sigma_meta          = sigma_meta;
     modelParams.guessRate           = guessRate;
     
-    tic
-    retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams, true);
-    elapsed_time = toc;
-    disp(['Execution time: ', num2str(elapsed_time), ' seconds']);
-    
 %     tic
-%     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
+%     retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams, true);
 %     elapsed_time = toc;
-%     disp(['Execution time::::: ', num2str(elapsed_time), ' seconds']);
+%     disp(['Execution time: ', num2str(elapsed_time), ' seconds']);
+    
+    tic
+    retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
+    elapsed_time = toc;
+    disp(['Execution time::::: ', num2str(elapsed_time), ' seconds']);
     
     anlytcl_sigma_m_stim(i)    = retData.E_sigma_m;
     anlytcl_sigma_m_stim_HC(i) = retData.E_sigma_m_HC;
@@ -177,8 +177,8 @@ for i=1:n_uncertainty_levels
     modelParams.sigma_meta          = sigma_meta;
     modelParams.guessRate           = guessRate;
     
-    retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams);
-    % retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
+    % retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams);
+    retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
     
     subplot(2, n_uncertainty_levels/2, i)
     hold on

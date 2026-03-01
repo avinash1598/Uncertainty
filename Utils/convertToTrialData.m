@@ -2,7 +2,7 @@ function trlData = convertToTrialData(data)
 
 grpOriErr            = data.resp_err_all; 
 confReport           = data.confidence_report_all;
-stimOris             = data.stimOri;
+stimOris             = data.theta_true_all; %data.stimOri;
 n_uncertainty_levels = size(grpOriErr, 1);
 
 grpOriErr    = reshape(grpOriErr, n_uncertainty_levels, []);

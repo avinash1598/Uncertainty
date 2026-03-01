@@ -16,8 +16,8 @@ addpath('C:\Users\avinash1598\Desktop\Uncertainty\OptimizationUtils\')
 addpath('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis\Utils\')
 
 % expData            = load('Data\CORNFB01.mat'); % Yichao
-% expData            = load('./Data/COR33.mat'); % Akash
-expData            = load('./Data/COR31.mat'); % Tien
+expData            = load('./Data/COR33.mat'); % Akash
+% expData            = load('./Data/COR31.mat'); % Tien
 % expData            = load('./Data/COR32.mat'); % Jiaming
 
 fltData       = expData.dat( expData.dat.session > 0 , :); 
@@ -25,14 +25,17 @@ f.dat         = fltData;
 formattedData = formatExpData(f, false, false); % no de-baising, work with raw errors
 
 %%
-errBins   = -90:3:90; % this is dx which might affect fitting. This value should be optimal. not too fine. not too coarse.
+errBins   = -90:1:90; % this is dx which might affect fitting. This value should be optimal. not too fine. not too coarse.
 
-optParams.nStarts = 10;
+optParams.nStarts = 30;
 optParams.hyperParamC1 = 0; % 10 or 100? Use 10 maybe to avoid overfitting
 optParams.hyperParamC2 = 0;
 optParams.randomGuessModel = true;
 
 result = Optimize(formattedData, errBins, "ind", [], optParams, "full");
+
+%%
+save("akash_full_model_ind_fit_method_2.mat", "result");
 
 %%
 % load('akash_full_model_ind_v2.mat');

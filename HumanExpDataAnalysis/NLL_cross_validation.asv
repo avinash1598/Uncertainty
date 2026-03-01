@@ -15,8 +15,8 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/')
 
 % expData            = load('Data\CORNFB01.mat'); % Yichao
-% expData            = load('./Data/COR33.mat'); % Akash
-expData            = load('./Data/COR31.mat'); % Tien
+expData            = load('./Data/COR33.mat'); % Akash
+% expData            = load('./Data/COR31.mat'); % Tien
 % expData            = load('./Data/COR32.mat'); % Jiaming
 
 fltData       = expData.dat( expData.dat.session > 0 , :); 
@@ -35,7 +35,7 @@ save('./CV_Data/cross_validation_tien_full.mat', 'cv_result');
 
 %% NLL on test data
 
-load('./CV_Data/cross_validation_tien.mat', 'cv_result');
+load('./CV_Data/cross_validation_akash_constraint.mat', 'cv_result');
 errBins   = -90:1:90;
 optParams.nStarts = 20;
 optParams.hyperParamC1 = 0;

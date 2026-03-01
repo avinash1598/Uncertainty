@@ -7,13 +7,18 @@
 clear all
 close all
 
-addpath('C:\Users\avinash1598\Desktop\Uncertainty\LLScriptsUtils\')
-addpath('C:\Users\avinash1598\Desktop\Uncertainty\PlotUtils\')
-addpath('C:\Users\avinash1598\Desktop\Uncertainty\Utils\')
-addpath('C:\Users\avinash1598\Desktop\Uncertainty\OptimizationUtils\')
+% addpath('C:\Users\avinash1598\Desktop\Uncertainty\LLScriptsUtils\')
+% addpath('C:\Users\avinash1598\Desktop\Uncertainty\PlotUtils\')
+% addpath('C:\Users\avinash1598\Desktop\Uncertainty\Utils\')
+% addpath('C:\Users\avinash1598\Desktop\Uncertainty\OptimizationUtils\')
+
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/')
 
 orientations     = linspace(0, 179, 10); %0:10:180; % 
-ntrials_per_ori  = 25; %1000;
+ntrials_per_ori  = 2500; %1000;
 b                = linspace(0.1, 1.5, 6); % 1.2 % Choose b such that average noise level ranges from low to high (relative to internal noise level)
 a                = 0.67.*b; %0.67   % Does a depend upon b? Yes
 biasAmp          = 0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
@@ -107,8 +112,10 @@ resp_err_all_reshaped = reshape(resp_err_all, uncertainty_levels, []);
 confidence_report_all_reshaped = reshape(confidence_report_all, uncertainty_levels, []);
 
 % Save model data
-data.stimOri                = theta_true_all;
-data.reportedOri            = theta_resp_all;
+% data.stimOri                = theta_true_all;
+% data.reportedOri            = theta_resp_all;
+data.theta_true_all         = theta_true_all;
+data.theta_resp_all         = theta_resp_all;
 data.resp_err_all           = resp_err_all;
 data.confidence_report_all  = confidence_report_all;
 % data.err         = resp_err_all;
@@ -116,6 +123,7 @@ data.confidence_report_all  = confidence_report_all;
 data.stdByOri               = squeeze( std(resp_err_all, 0, 3) );
 data.madByOri               = squeeze( mad(resp_err_all, 1, 3) );
 data.orientations           = orientations';
+% data.bias                   = mean( resp_err_all_reshaped, 1 );
 
 data.params.sigma_s_reduced_model = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 )';
 data.params.b                     = b;
@@ -135,37 +143,76 @@ optParams.hyperParamC1 = 0;
 optParams.hyperParamC2 = 0;
 optParams.randomGuessModel = true;
 
-% result = Optimize(data, errBins, "ind", [], optParams, "full");
-result = Optimize(data, errBins, "cov", [], optParams, "full"); % Fit incorrect model
+result = Optimize(data, errBins, "ind", [], optParams, "full");
 
-%%
 res.data = data;
 res.result = result;
 res.errBins = errBins;
-save('ind_data_cov_fit_full_model_fit_method_2_25_trials.dat', 'res');
+save('ind_data_full_model_fit_method_2_2500_trials.mat', 'res');
+
+optParams.nStarts = 30;
+optParams.hyperParamC1 = 0;
+optParams.hyperParamC2 = 0;
+optParams.randomGuessModel = true;
+
+result = Optimize(data, errBins, "cov", [], optParams, "full"); % Fit incorrect model
+
+res.data = data;
+res.result = result;
+res.errBins = errBins;
+save('ind_data_cov_fit_full_model_fit_method_2_2500_trials.dat', 'res');
 
 %%
+modelType = "cov";
+
+if modelType == "cov"
+    load('ind_data_cov_fit_full_model_fit_method_2_2500_trials.mat')
+else
+    load('ind_data_full_model_fit_method_2_2500_trials.mat')
+end
+
+
+data = res.data;
+result = res.result;
+errBins = res.errBins;
+
+theta_true_all = data.theta_true_all;
+theta_resp_all = data.theta_resp_all;
+resp_err_all = data.resp_err_all;
+confidence_report_all = data.confidence_report_all;
+orientations          = data.orientations;
+
+resp_err_all_reshaped = reshape(data.resp_err_all, 6, []);
+
+A = permute(data.resp_err_all, [2 3 1]);  
+B = reshape(A, numel(orientations), []);
+data.bias             = mean( B, 2 );
+
 [~, idx] = min(result.f);
 
-opt_param_sigma_s         = result.x(idx, 1:n_uncertainty_levels);
-%opt_param_shape           = result.x(idx, n_uncertainty_levels + 1 - 0);
-opt_param_scale           = result.x(idx, n_uncertainty_levels + 2-1);
-opt_param_sigma_meta      = result.x(idx, n_uncertainty_levels + 3-1);
-opt_param_Cc              = result.x(idx, n_uncertainty_levels + 4-1);
-opt_param_guessrate       = result.x(idx, n_uncertainty_levels + 5-1);
-opt_param_sigma_ori_scale = result.x(idx, n_uncertainty_levels + 6-1);
-opt_param_bias            = result.x(idx, n_uncertainty_levels + 7-1);
+if modelType == "cov"
+    opt_param_sigma_s         = result.x(idx, 1:n_uncertainty_levels);
+    opt_param_scale           = result.x(idx ,n_uncertainty_levels + 1);
+    opt_param_sigma_meta      = result.x(idx, n_uncertainty_levels + 2);
+    opt_param_Cc              = result.x(idx, n_uncertainty_levels + 3);
+    opt_param_guessrate       = result.x(idx, n_uncertainty_levels + 4);
+    opt_param_sigma_ori_scale = result.x(idx, n_uncertainty_levels + 5);
+    opt_param_bias            = result.x(idx, n_uncertainty_levels + 6);
 
-% opt_param_sigma_s         = result.x(idx, 1:n_uncertainty_levels);
-% opt_param_scale           = result.x(idx ,n_uncertainty_levels + 1);
-% opt_param_sigma_meta      = result.x(idx, n_uncertainty_levels + 2);
-% opt_param_Cc              = result.x(idx, n_uncertainty_levels + 3);
-% opt_param_guessrate       = result.x(idx, n_uncertainty_levels + 4);
-% opt_param_sigma_ori_scale = result.x(idx, n_uncertainty_levels + 5);
-% opt_param_bias            = result.x(idx, n_uncertainty_levels + 6);
+else
+    opt_param_sigma_s         = result.x(idx, 1:n_uncertainty_levels);
+    opt_param_shape           = result.x(idx, n_uncertainty_levels + 1 - 0);
+    opt_param_scale           = result.x(idx, n_uncertainty_levels + 2-0);
+    opt_param_sigma_meta      = result.x(idx, n_uncertainty_levels + 3-0);
+    opt_param_Cc              = result.x(idx, n_uncertainty_levels + 4-0);
+    opt_param_guessrate       = result.x(idx, n_uncertainty_levels + 5-0);
+    opt_param_sigma_ori_scale = result.x(idx, n_uncertainty_levels + 6-0);
+    opt_param_bias            = result.x(idx, n_uncertainty_levels + 7-0);
+
+end
 
 gt_sigma_s          = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 );
-%gt_shape            = shape;
+gt_shape            = shape;
 gt_scale            = scale;
 gt_sigma_meta       = sigma_meta;
 gt_Cc               = Cc;
@@ -178,21 +225,25 @@ for i =1:n_uncertainty_levels
     fprintf("GT: %.4f, Fit: %.4f \n", b(i), opt_param_sigma_s(i))
 end
 
-%fprintf("GT: %.4f, Fit: %.4f \n", gt_shape, opt_param_shape)
-fprintf("GT: %.4f, Fit: %.4f \n", gt_scale, opt_param_scale)
-fprintf("GT: %.4f, Fit: %.4f \n", gt_sigma_meta, opt_param_sigma_meta)
-fprintf("GT: %.4f, Fit: %.4f \n", gt_Cc, opt_param_Cc)
-fprintf("GT: %.4f, Fit: %.4f \n", gt_guessrate, opt_param_guessrate)
-fprintf("GT: %.4f, Fit: %.4f \n", gt_sigma_ori_scale, opt_param_sigma_ori_scale)
-fprintf("GT: %.4f, Fit: %.4f \n", gt_bias, opt_param_bias)
+if modelType == "ind"
+    fprintf("Shape GT: %.4f, Fit: %.4f \n", gt_shape, opt_param_shape)
+end
+fprintf("Scale GT: %.4f, Fit: %.4f \n", gt_scale, opt_param_scale)
+fprintf("Meta GT: %.4f, Fit: %.4f \n", gt_sigma_meta, opt_param_sigma_meta)
+fprintf("Cc GT: %.4f, Fit: %.4f \n", gt_Cc, opt_param_Cc)
+fprintf("GR GT: %.4f, Fit: %.4f \n", gt_guessrate, opt_param_guessrate)
+fprintf("Ori Scale GT: %.4f, Fit: %.4f \n", gt_sigma_ori_scale, opt_param_sigma_ori_scale)
+fprintf("Bias GT: %.4f, Fit: %.4f \n", gt_bias, opt_param_bias)
 
 %% Get analytical solution
 anlytcl_sigma_m_stim = zeros(1, uncertainty_levels);
 anlytcl_sigma_m_stim_HC = zeros(1, uncertainty_levels);
 anlytcl_sigma_m_stim_LC = zeros(1, uncertainty_levels);
-anlytcl_mad_m_stim = zeros(1, uncertainty_levels);
+anlytcl_mad_m = zeros(1, uncertainty_levels);
 anlytcl_mad_m_stim_HC = zeros(1, uncertainty_levels);
 anlytcl_mad_m_stim_LC = zeros(1, uncertainty_levels);
+anlytcl_mad_m_stim = zeros(n_uncertainty_levels, numel(orientations));
+anlytcl_bias = zeros(n_uncertainty_levels, numel(orientations));
 
 for i=1:uncertainty_levels
     rvOriErr = errBins;
@@ -200,23 +251,28 @@ for i=1:uncertainty_levels
     modelParams.b                   = opt_param_sigma_s(i);
     modelParams.a                   = gt_sigma_ori_scale*opt_param_sigma_s(i);
     modelParams.biasAmp             = opt_param_bias;
-    %modelParams.shape               = opt_param_shape;
     modelParams.scale               = opt_param_scale;
     modelParams.Cc                  = opt_param_Cc;
     modelParams.sigma_meta          = opt_param_sigma_meta;
     modelParams.guessRate           = opt_param_guessrate;
 
-    %retData = getEstimatesPDFs(orientations, rvOriErr, modelParams, false);
-    retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams, false);
+    if modelType == "ind"
+        modelParams.shape               = opt_param_shape;
+        retData = getEstimatesPDFs(orientations, rvOriErr, modelParams, false);
+    else
+        retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams, false);
+    end
     
     anlytcl_sigma_m_stim(i)    = retData.E_sigma_m;
     anlytcl_sigma_m_stim_HC(i) = retData.E_sigma_m_HC;
     anlytcl_sigma_m_stim_LC(i) = retData.E_sigma_m_LC;
 
-    anlytcl_mad_m_stim(i)      = retData.mad_m;
+    anlytcl_mad_m(i)      = retData.mad_m;
     anlytcl_mad_m_stim_HC(i)   = retData.mad_m_HC;
     anlytcl_mad_m_stim_LC(i)   = retData.mad_m_LC;
 
+    anlytcl_mad_m_stim(i, :) = retData.mad_m_by_ori;
+    anlytcl_bias(i, :)       = retData.bias;
 end
 
 %%
@@ -230,14 +286,17 @@ for i=1:n_uncertainty_levels
     modelParams.b                   = opt_param_sigma_s(i);
     modelParams.a                   = gt_sigma_ori_scale*opt_param_sigma_s(i);
     modelParams.biasAmp             = opt_param_bias;
-    %modelParams.shape               = opt_param_shape;
     modelParams.scale               = opt_param_scale;
     modelParams.Cc                  = opt_param_Cc;
     modelParams.sigma_meta          = opt_param_sigma_meta;
     modelParams.guessRate           = opt_param_guessrate;
     
-    % retData = getEstimatesPDFs(orientations, rvOriErr, modelParams, false);
-    retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams);
+    if modelType == "ind"
+        modelParams.shape               = opt_param_shape;
+        retData = getEstimatesPDFs(orientations, rvOriErr, modelParams, false);
+    else
+        retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams, false);
+    end
     
     subplot(3, n_uncertainty_levels, i)
     hold on
@@ -351,7 +410,7 @@ subplot(2, 3, 4)
 % Behavioral variability
 scatter(mean_sigma_s_stim, y_m, "filled");
 hold on
-plot(mean_sigma_s_stim, anlytcl_mad_m_stim, LineWidth=1.5);
+plot(mean_sigma_s_stim, anlytcl_mad_m, LineWidth=1.5);
 xlabel("\sigma_s (sensory noise)")
 ylabel("MAD (measurement)")
 hold off
@@ -367,4 +426,31 @@ plot(mean_sigma_s_stim, anlytcl_mad_m_stim_LC, LineWidth=1.5, HandleVisibility="
 xlabel("\sigma_s(s) (sensory noise)")
 ylabel("MAD (measurement)")
 legend
+hold off
+
+
+% Ori dependent variance
+figure
+
+madByOri = data.madByOri;
+orientations = data.orientations;
+
+for i=1:n_uncertainty_levels
+
+    subplot(2, 3, i)
+    hold on
+    plot(orientations, anlytcl_mad_m_stim(i, :), LineWidth=1.5, DisplayName="fit")
+    scatter(orientations, madByOri(i, :))
+    hold off
+end
+
+% Bias
+figure
+
+bias = data.bias;
+oriBias = anlytcl_bias(1, :);
+
+scatter(orientations, bias)
+hold on
+plot(orientations, oriBias)
 hold off

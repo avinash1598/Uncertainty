@@ -22,11 +22,12 @@ end
 % Exp data
 trlData              = convertToTrialData(data);
 n_uncertainty_levels = trlData.n_uncertainty_levels;
-trlErrors            = trlData.trlErrors;
-trlConfReports       = trlData.trlConfReports;
-trlUncertaintyLevels = trlData.trlUncertaintyLevels;
+% trlErrors            = trlData.trlErrors;
+% trlConfReports       = trlData.trlConfReports;
+% trlUncertaintyLevels = trlData.trlUncertaintyLevels;
 
 warning("This is not computed on filtered data. But maybe this is the right approach since this is th ground truth.")
+
 y_mad      = trlData.y_mad;
 y_HC_mad   = trlData.y_HC_mad;
 y_LC_mad   = trlData.y_LC_mad;
@@ -37,7 +38,7 @@ K       = numel( cv_data.resultsListCov ) / nPerm;
 % n       = numel( cv_data.resultsListCov );
 % itr     = numel( cv_data.resultsListCov{n}.f );
 
-foldIDs = cv_data.foldIDs;
+% foldIDs = cv_data.foldIDs;
 
 nllCovModel = []; %zeros(K*nPerm, 1);
 nllIndModel = []; %zeros(K*nPerm, 1);
@@ -49,41 +50,56 @@ fvalsInd = []; % zeros(K*nPerm*30, 1);
 minfvalsCov = []; %zeros(K*nPerm, 1);
 minfvalsInd = []; %zeros(K*nPerm, 1);
 
+minFValCovModel = intmax;
+minFValIndModel = intmax;
+paramsCovModel = [];
+paramsIndModel = [];
+
 for h=1:nPerm
-    foldID = foldIDs{h};
+    % foldID = foldIDs{h};
     
     for k = 1:K
         disp(K*(h-1) + k)
 
         % ---- Split trials ----
-        testIdx  = (foldID == k);
+        % testIdx  = (foldID == k);
         
         % TODO: later get it directly from the structure or use it to do
         % sanity check to make sure right data is used.
-
+        
+        err_  = cv_data.cvTrlData{h, k}.testData.trlErrors;
+        conf_ = cv_data.cvTrlData{h, k}.testData.trlConfReports;
+        lvl_  = cv_data.cvTrlData{h, k}.testData.trlUncertaintyLevels;
+        
         % build binned data for train dataset
         binnedData = buildBinnedData( ...
             n_uncertainty_levels, ...
             errBins, ...
-            trlErrors(testIdx), ...
-            trlConfReports(testIdx), ...
-            trlUncertaintyLevels(testIdx));
+            err_, conf_, lvl_);
         
-%         metrics = computeMetricsFromTrlData(trlErrors(testIdx), ...
-%             trlConfReports(testIdx), trlUncertaintyLevels(testIdx));
+%         binnedData = buildBinnedData( ...
+%             n_uncertainty_levels, ...
+%             errBins, ...
+%             trlErrors(testIdx), ...
+%             trlConfReports(testIdx), ...
+%             trlUncertaintyLevels(testIdx));
+        
+        % metrics = computeMetricsFromTrlData(trlErrors(testIdx), ...
+        %     trlConfReports(testIdx), trlUncertaintyLevels(testIdx));
         
         metaData.n_levels      = n_uncertainty_levels;
         metaData.errBins       = errBins;
         metaData.binned_err_LC = binnedData.binned_err_LC;
         metaData.binned_err_HC = binnedData.binned_err_HC;
+        metaData.orientations  = data.orientations';
         
         % TODO: compute it on filtered data
         metaData.targetMADs    = y_mad;
         metaData.targetMADs_HC = y_HC_mad;
         metaData.targetMADS_LC = y_LC_mad;
-%         metaData.targetMADs    = metrics.mads;
-%         metaData.targetMADs_HC = metrics.mads_HC;
-%         metaData.targetMADS_LC = metrics.mads_LC;
+        % metaData.targetMADs    = metrics.mads;
+        % metaData.targetMADs_HC = metrics.mads_HC;
+        % metaData.targetMADS_LC = metrics.mads_LC;
         
         metaData.hyperParamC1      = hyperParamC1;
         metaData.randomGuessModel  = randomGuessModel;
@@ -94,13 +110,15 @@ for h=1:nPerm
         [val, idx]        = min(fvalsCovModel);
         params            = fitParamsCovModel(idx, :);
         nllCov            = computeNLLCov(params, metaData, fitType);
-
+        
         minfvalsCov = [minfvalsCov val];
         nllCovModel = [nllCovModel nllCov];
         fvalsCov    = [fvalsCov fvalsCovModel];
-        % minfvalsCov(K*(h-1) + k) = val;
-        % nllCovModel(K*(h-1) + k) = nllCov;
-        % fvalsCov( ( ( K*(h-1) + k - 1)*itr + 1) : (K*(h-1) + k)*itr ) = fvalsCovModel;
+        
+        if val < minFValCovModel
+            paramsCovModel  = params;
+            minFValCovModel = val;
+        end
         
         % ind model
         fvalsIndModel     = cv_data.resultsListInd{h, k}.f;
@@ -112,9 +130,11 @@ for h=1:nPerm
         minfvalsInd = [minfvalsInd val];
         nllIndModel = [nllIndModel nllInd];
         fvalsInd    = [fvalsInd fvalsIndModel];
-        % minfvalsInd(K*(h-1) + k) = val;
-        % nllIndModel(K*(h-1) + k) = nllInd;
-        % fvalsInd( ( (K*(h-1) + k - 1)*itr + 1) : (K*(h-1) + k)*itr ) = fvalsIndModel;
+        
+        if val < minFValIndModel
+            paramsIndModel  = params;
+            minFValIndModel = val;
+        end
         
         deltaNLL = [deltaNLL (nllCov - nllInd)];
         % deltaNLL(K*(h-1) + k) = nllCov - nllInd; % negative value better for cov data - this is better
@@ -130,5 +150,10 @@ nllData.fvalsInd     = fvalsInd;
 
 nllData.minfvalsCov  = minfvalsCov;
 nllData.minfvalsInd  = minfvalsInd;
+
+nllData.paramsCovModel  = paramsCovModel;
+nllData.paramsIndModel  = paramsIndModel;
+nllData.minFValCovModel = minFValCovModel;
+nllData.minFValIndModel = minFValIndModel;
 
 end

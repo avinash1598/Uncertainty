@@ -1,16 +1,18 @@
-function plotFitResult_guessrate(data, modelParams, modelType, fullModel)
+function plotFitResult_guessrate(data, modelParams, modelType, errBins, fullModel)
 
-if nargin < 4 && isempty(fullModel)
+if nargin < 5 && isempty(fullModel)
     fullModel = false;
 end
 
 grpOriErr            = data.resp_err_all; 
 confReport           = data.confidence_report_all;
 n_uncertainty_levels = size(grpOriErr, 1);
+orientations         = data.orientations';
 
 grpOriErr    = reshape(grpOriErr, n_uncertainty_levels, []);
 confReport   = reshape(confReport, n_uncertainty_levels, []);
-errBins      = -90:3:90;
+% errBins      = -90:3:90;
+% errBins      = -90:0.1:90;
 
 % Get PDFs from data for HC and LC
 pdf_stim_LC = zeros( n_uncertainty_levels, numel(errBins) );
@@ -73,10 +75,11 @@ analyticalSols = cell(n_uncertainty_levels, 1);
 anlytcl_sigma_m = zeros(1, n_uncertainty_levels);
 anlytcl_sigma_m_HC = zeros(1, n_uncertainty_levels);
 anlytcl_sigma_m_LC = zeros(1, n_uncertainty_levels);
-anlytcl_mad_m_stim = zeros(1, n_uncertainty_levels);
-anlytcl_mad_m_stim_HC = zeros(1, n_uncertainty_levels);
-anlytcl_mad_m_stim_LC = zeros(1, n_uncertainty_levels);
-
+anlytcl_mad_m = zeros(1, n_uncertainty_levels);
+anlytcl_mad_m_HC = zeros(1, n_uncertainty_levels);
+anlytcl_mad_m_LC = zeros(1, n_uncertainty_levels);
+anlytcl_mad_m_stim = zeros(n_uncertainty_levels, numel(orientations));
+anlytcl_bias = zeros(n_uncertainty_levels, numel(orientations));
 
 for i=1:n_uncertainty_levels
 
@@ -96,17 +99,17 @@ for i=1:n_uncertainty_levels
         mP.shape = param_shape;
 
         if fullModel
-            analyticalSol = getEstimatesPDFs(0:15:179, errBins, mP);
+            analyticalSol = getEstimatesPDFs(orientations, errBins, mP, false);
         else
-            analyticalSol = getEstimatesPDFs_reduced_model(errBins, mP);
+            analyticalSol = getEstimatesPDFs_reduced_model(errBins, mP, false);
         end
 
     elseif modelType == "cov"
 
         if fullModel
-            analyticalSol = getEstimationsPDF_cov(0:15:179, errBins, mP);
+            analyticalSol = getEstimationsPDF_cov(orientations, errBins, mP, false);
         else
-            analyticalSol = getEstimationsPDF_cov_reduced(errBins, mP);
+            analyticalSol = getEstimationsPDF_cov_reduced(errBins, mP, false);
         end
     end
     
@@ -114,10 +117,15 @@ for i=1:n_uncertainty_levels
     anlytcl_sigma_m_HC(i) = analyticalSol.E_sigma_m_HC;
     anlytcl_sigma_m_LC(i) = analyticalSol.E_sigma_m_LC;
 
-    anlytcl_mad_m_stim(i)      = analyticalSol.mad_m;
-    anlytcl_mad_m_stim_HC(i)   = analyticalSol.mad_m_HC;
-    anlytcl_mad_m_stim_LC(i)   = analyticalSol.mad_m_LC;
+    anlytcl_mad_m(i)         = analyticalSol.mad_m;
+    anlytcl_mad_m_HC(i)      = analyticalSol.mad_m_HC;
+    anlytcl_mad_m_LC(i)      = analyticalSol.mad_m_LC;
 
+    if fullModel
+        anlytcl_mad_m_stim(i, :) = analyticalSol.mad_m_by_ori;
+        anlytcl_bias(i, :)       = analyticalSol.bias;
+    end
+    
     analyticalSols{i}     = analyticalSol;
 end
 
@@ -241,7 +249,7 @@ subplot(2, 3, 5)
 % Behavioral variability
 scatter(param_sigma_s(idxSorted), y_m(idxSorted), "filled");
 hold on
-plot(param_sigma_s(idxSorted), anlytcl_mad_m_stim(idxSorted), LineWidth=1.5);
+plot(param_sigma_s(idxSorted), anlytcl_mad_m(idxSorted), LineWidth=1.5);
 xlabel("\sigma_s (sensory noise)")
 ylabel("MAD (measurement)")
 hold off
@@ -251,48 +259,55 @@ subplot(2, 3, 6)
 % Behavioral variability
 scatter(param_sigma_s(idxSorted), y_HC_m(idxSorted), "filled", DisplayName="High confidence");
 hold on
-plot(param_sigma_s(idxSorted), anlytcl_mad_m_stim_HC(idxSorted), LineWidth=1.5, HandleVisibility="off");
+plot(param_sigma_s(idxSorted), anlytcl_mad_m_HC(idxSorted), LineWidth=1.5, HandleVisibility="off");
 scatter(param_sigma_s(idxSorted), y_LC_m(idxSorted), "filled", DisplayName="Low confidence");
-plot(param_sigma_s(idxSorted), anlytcl_mad_m_stim_LC(idxSorted), LineWidth=1.5, HandleVisibility="off");
+plot(param_sigma_s(idxSorted), anlytcl_mad_m_LC(idxSorted), LineWidth=1.5, HandleVisibility="off");
 xlabel("\sigma_s(s) (sensory noise)")
 ylabel("MAD (measurement)")
 legend
 hold off
 
+if fullModel
 
-% Ori dependent variance
-figure
+    % Ori dependent variance
+    figure
 
-stdByOri = data.stdByOri;
-% madByOri = data.madByOri;
-% bias = data.bias;
-orientations = data.orientations;
-b_opt = modelParams(1:n_uncertainty_levels);
-a_opt = modelParams(end-1).*b_opt;
-
-for i=1:n_uncertainty_levels
-
-    b_est = b_opt(i);
-    a_est = a_opt(i);
+    % stdByOri = data.stdByOri;
+    madByOri = data.madByOri;
+    % bias = data.bias;
+    orientations = data.orientations;
+    %b_opt = modelParams(1:n_uncertainty_levels);
+    %a_opt = modelParams(end-1).*b_opt;
     
-    subplot(2, 3, i)
+    for i=1:n_uncertainty_levels
+    
+        %b_est = b_opt(i);
+        %a_est = a_opt(i);
+        
+        subplot(2, 3, i)
+        hold on
+        %plot( orientations, b_est + a_est*abs(sind(orientations - 90)), LineWidth=1.5, DisplayName="fit")
+        %plot( orientations, b_est + a_est*abs(sind(2*orientations)), LineWidth=1.5, DisplayName="fit")
+        %scatter(orientations, stdByOri(i, :))
+        plot(orientations, anlytcl_mad_m_stim(i, :), LineWidth=1.5, DisplayName="fit")
+        scatter(orientations, madByOri(i, :))
+        % ylim([0 60])
+        hold off
+    end
+    
+    % Bias
+    figure
+    
+    bias = data.bias;
+    oriBias = anlytcl_bias(1, :);
+    %biasAmp = modelParams(end);
+    %oriBias = biasAmp*sind(2*orientations);
+    
+    scatter(orientations, bias)
     hold on
-    plot( orientations, b_est + a_est*abs(sind(orientations - 90)), LineWidth=1.5, DisplayName="fit")
-    scatter(orientations, stdByOri(i, :))
-    % ylim([0 60])
+    plot(orientations, oriBias)
     hold off
+
 end
-
-% Bias
-figure
-
-bias = data.bias;
-biasAmp = modelParams(end);
-oriBias = biasAmp*sind(2*orientations);
-
-scatter(orientations, bias)
-hold on
-plot(orientations, oriBias)
-hold off
 
 end
