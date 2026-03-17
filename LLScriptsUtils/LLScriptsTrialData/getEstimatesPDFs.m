@@ -1,15 +1,27 @@
-function [retData] = getEstimatesPDFs(stimVals, rvOriErrs, modelParams, optimizationFlag)
-
-error("deprecated")
+function [retData] = getEstimatesPDFs(stimVals, modelParams, optimizationFlag)
 
 % warning("Deprecated")
-if nargin < 4
+if nargin < 3
     optimizationFlag = false;   % default value
 end
 
-% rvOriErrs - random variable for orientations errors over which
-% PDF/likelihood is computed.
+% No of samples to draw for numerical approximation
+if ~isfield(modelParams, 'internalNoiseSamplesCnt')
+    modelParams.internalNoiseSamplesCnt = 100; % Default value obtained from params check analysis
+end
 
+% Precision of orientation error bins
+if ~isfield(modelParams, 'oriErrBinWidth')
+    modelParams.oriErrBinWidth = 2; % Default value obtained from params check analysis
+end
+
+% Controls wrapped gaussian distribution
+if ~isfield(modelParams, 'K')
+    modelParams.K = 1; % Default value obtained from params check analysis
+end
+
+K                         = modelParams.K;
+rvOriErrs                 = -90:modelParams.oriErrBinWidth:90;
 stimOris                  = stimVals;
 b                         = modelParams.b;       % Baseline stimulus dependent sensory noise level
 a                         = modelParams.a;       % Amplitude for stimulus dependent sensory noise modulation
@@ -19,7 +31,7 @@ scale                     = modelParams.scale;
 Cc                        = modelParams.Cc;
 sigma_meta                = modelParams.sigma_meta;
 guessRate                 = modelParams.guessRate;
-internalNoiseSamplesCnt   = 500; %1000; %400, 1000;
+internalNoiseSamplesCnt   = modelParams.internalNoiseSamplesCnt; % 100; %1000; %400, 1000;
 numOris                   = numel(stimOris);  
 
 bias = biasAmp*sind(2*stimOris); % As per human subjects
@@ -54,6 +66,11 @@ pLC_all = cdf_vals;
 mean_cdf_val = mean(cdf_vals(:));
 mean_cdf_val_stim = mean(cdf_vals, 2);
 
+% Precompute stuff for analytical solution calculation
+pdf_random_guesses = ones(size(rvOriErrs)) / (numel(rvOriErrs) + 1);
+pdf_random_guesses = pdf_random_guesses./trapz(rvOriErrs, pdf_random_guesses); 
+pdf_random_guesses = pdf_random_guesses';
+
 % Compute PDF for each orientation
 analyticalPDF_stim    = zeros(numOris, numel(rvOriErrs));
 analyticalPDF_stim_HC = zeros(numOris, numel(rvOriErrs));
@@ -67,24 +84,12 @@ est_mad_m_stim = zeros(numOris, 1);
 est_mad_m_stim_HC = zeros(numOris, 1);
 est_mad_m_stim_LC = zeros(numOris, 1);
 
-% [pdf_s, pdfHC_s, pdfLC_s, sigma_s, sigmaHC_s, sigmaLC_s, mad_m_s, mad_m_HC_s, mad_m_LC_s] = getGaussianMixturePDF( ...
-%     rvOriErrs, sigma_m_stim, bias, pHC_all, pLC_all, guessRate, optimizationFlag);
-% 
-% analyticalPDF_stim(:)    = pdf_s;
-% analyticalPDF_stim_HC(:) = pdfHC_s;
-% analyticalPDF_stim_LC(:) = pdfLC_s;
-% 
-% est_sigma_m_stim(:)    = sigma_s;
-% est_sigma_m_stim_HC(:) = sigmaHC_s;
-% est_sigma_m_stim_LC(:) = sigmaLC_s;
-% 
-% est_mad_m_stim(:)    = mad_m_s;
-% est_mad_m_stim_HC(:) = mad_m_HC_s;
-% est_mad_m_stim_LC(:) = mad_m_LC_s;
-
 for i = 1:numOris
     [pdf, pdfHC, pdfLC, sigma_, sigmaHC, sigmaLC, mad_m, mad_m_HC, mad_m_LC] = getGaussianMixturePDF(rvOriErrs, ...
-        sigma_m_stim(i, :), bias(i), pHC_all(i, :), pLC_all(i, :), guessRate, optimizationFlag);
+        sigma_m_stim(i, :), bias(i), pHC_all(i, :), pLC_all(i, :), guessRate, ...
+        pdf_random_guesses, ...
+        K, ...
+        optimizationFlag);
 
     analyticalPDF_stim(i, :)    = pdf;
     analyticalPDF_stim_HC(i, :) = pdfHC;
@@ -123,40 +128,44 @@ retData.pLC_stim   = mean_cdf_val_stim;
 retData.pHC  = 1 - mean_cdf_val;
 retData.pLC  = mean_cdf_val;
 
-%% Sigma
+if ~optimizationFlag
 
-% Expected sigma - LC and HC by stimulus orientation
-% retData.E_sigma_m_stim_HC = sqrt( sum(sigma_m_stim.^2.*pHC_all, 2)./sum(pHC_all, 2) );
-% retData.E_sigma_m_stim_LC = sqrt( sum(sigma_m_stim.^2.*pLC_all, 2)./sum(pLC_all, 2) );
-retData.E_sigma_m_stim_HC = est_sigma_m_stim_HC;
-retData.E_sigma_m_stim_LC = est_sigma_m_stim_LC;
+    %% Sigma
+    
+    % Expected sigma - LC and HC by stimulus orientation
+    % retData.E_sigma_m_stim_HC = sqrt( sum(sigma_m_stim.^2.*pHC_all, 2)./sum(pHC_all, 2) );
+    % retData.E_sigma_m_stim_LC = sqrt( sum(sigma_m_stim.^2.*pLC_all, 2)./sum(pLC_all, 2) );
+    retData.E_sigma_m_stim_HC = est_sigma_m_stim_HC;
+    retData.E_sigma_m_stim_LC = est_sigma_m_stim_LC;
+    
+    % Expected sigma - LC and HC - combined across all orientations
+    % retData.E_sigma_m_HC = sqrt( sum(sigma_m_stim.^2.*pHC_all, 'all')/sum(pHC_all, 'all') );
+    % retData.E_sigma_m_LC = sqrt( sum(sigma_m_stim.^2.*pLC_all, 'all')/sum(pLC_all, 'all') );
+    retData.E_sigma_m_HC = sqrt( sum( est_sigma_m_stim_HC.^2.*retData.pHC_stim )./sum(retData.pHC_stim) );
+    retData.E_sigma_m_LC = sqrt( sum( est_sigma_m_stim_LC.^2.*retData.pLC_stim )./sum(retData.pLC_stim) );
+    % retData.E_sigma_m_HC = sqrt( retData.E_sigma_m_HC.^2 + std(bias).^2 );
+    % retData.E_sigma_m_Lc = sqrt( retData.E_sigma_m_LC.^2 + std(bias).^2 );
+    
+    % Expected sigma for each stimulus orientation - aggreagted by HC and LC:
+    % Analytical solution
+    % retData.E_sigma_m_stim = sqrt( sigma_s_stim.^2 + scaleParam * shapeParam );
+    retData.E_sigma_m_stim = est_sigma_m_stim;
+    
+    % Expected sigma for all perceptual reports
+    % retData.E_sigma_m = sqrt( mean( sigma_s_stim.^2 + scaleParam * shapeParam ) );
+    retData.E_sigma_m = sqrt( mean( est_sigma_m_stim.^2 ) + std(bias).^2 );% + std(bias).^2 ; 
+    
+    %% MAD
+    retData.mad_m_stim_HC = est_mad_m_stim_HC;
+    retData.mad_m_stim_LC = est_mad_m_stim_LC;
+    retData.mad_m_stim = est_mad_m_stim;
+    
+    retData.mad_m_HC     = ( sum( est_mad_m_stim_HC.*retData.pHC_stim )./sum(retData.pHC_stim) );
+    retData.mad_m_LC     = ( sum( est_mad_m_stim_LC.*retData.pLC_stim )./sum(retData.pLC_stim) );
+    retData.mad_m        = mean( est_mad_m_stim); % + mad(bias)
+    retData.mad_m_by_ori = est_mad_m_stim; % change 1
 
-% Expected sigma - LC and HC - combined across all orientations
-% retData.E_sigma_m_HC = sqrt( sum(sigma_m_stim.^2.*pHC_all, 'all')/sum(pHC_all, 'all') );
-% retData.E_sigma_m_LC = sqrt( sum(sigma_m_stim.^2.*pLC_all, 'all')/sum(pLC_all, 'all') );
-retData.E_sigma_m_HC = sqrt( sum( est_sigma_m_stim_HC.^2.*retData.pHC_stim )./sum(retData.pHC_stim) );
-retData.E_sigma_m_LC = sqrt( sum( est_sigma_m_stim_LC.^2.*retData.pLC_stim )./sum(retData.pLC_stim) );
-% retData.E_sigma_m_HC = sqrt( retData.E_sigma_m_HC.^2 + std(bias).^2 );
-% retData.E_sigma_m_Lc = sqrt( retData.E_sigma_m_LC.^2 + std(bias).^2 );
-
-% Expected sigma for each stimulus orientation - aggreagted by HC and LC:
-% Analytical solution
-% retData.E_sigma_m_stim = sqrt( sigma_s_stim.^2 + scaleParam * shapeParam );
-retData.E_sigma_m_stim = est_sigma_m_stim;
-
-% Expected sigma for all perceptual reports
-% retData.E_sigma_m = sqrt( mean( sigma_s_stim.^2 + scaleParam * shapeParam ) );
-retData.E_sigma_m = sqrt( mean( est_sigma_m_stim.^2 ) + std(bias).^2 );% + std(bias).^2 ; 
-
-%% MAD
-retData.mad_m_stim_HC = est_mad_m_stim_HC;
-retData.mad_m_stim_LC = est_mad_m_stim_LC;
-retData.mad_m_stim = est_mad_m_stim;
-
-retData.mad_m_HC     = ( sum( est_mad_m_stim_HC.*retData.pHC_stim )./sum(retData.pHC_stim) );
-retData.mad_m_LC     = ( sum( est_mad_m_stim_LC.*retData.pLC_stim )./sum(retData.pLC_stim) );
-retData.mad_m        = mean( est_mad_m_stim); % + mad(bias)
-retData.mad_m_by_ori = est_mad_m_stim; % change 1
+end
 
 %%
 % Stimulus dependent bias
@@ -179,56 +188,75 @@ end
 
 % PDF for individual orientations
 function [pdf, pdfHC, pdfLC, sigma, sigmaHC, sigmaLC, mad_m, mad_m_HC, mad_m_LC] = getGaussianMixturePDF( ...
-    x, sigma_m_stim, bias, pHC, pLC, guessRate, optimizationFlag)
+    x, sigma_m_stim, bias, pHC, pLC, guessRate, pdfRG, K, optimizationFlag)
 % x = array of perceptual errors
 
-pdf_random_guesses = ones(size(x)) / (numel(x) + 1);
-pdf_random_guesses = pdf_random_guesses./trapz(x, pdf_random_guesses); 
-pdf_random_guesses = pdf_random_guesses';
+% Wrapped gaussian
+% If probability lands outside [-90,90] i.e. period 180, move it back inside by wrapping.
+period = 180;
+% K = 1; % K=1 good enough for max obsevred signam of 45 in the actual data. If needed maybe 2 can be tried as well
+pdf   = zeros(length(x),1);
+pdfHC = zeros(length(x),1);
+pdfLC = zeros(length(x),1);
 
-Z = x - bias;
-p_X = exp(- (Z').^2 ./ (2*sigma_m_stim.^2 ) ) ./ sqrt(2*pi*sigma_m_stim.^2);
-pdf = sum(p_X, 2);
-pdf = pdf./trapz(x, pdf);
-pdf = (1 - guessRate)*pdf + guessRate*pdf_random_guesses; 
-pdf = pdf./trapz(x, pdf);
+% Normalize such that sum is 1
+% This is done to avoid using trapz
+pHC = pHC ./ sum(pHC); 
+pLC = pLC ./ sum(pLC);
 
-% HC pdf
-p_X_HC = p_X.*pHC;
-pdfHC = sum(p_X_HC, 2);
-pdfHC = pdfHC./trapz(x, pdfHC);
-pdfHC = (1 - guessRate)*pdfHC + guessRate*pdf_random_guesses; 
-pdfHC = pdfHC./trapz(x, pdfHC);
+inv2sig2  = 1 ./ (2*sigma_m_stim.^2);
+normconst = 1 ./ (sqrt(2*pi) .* sigma_m_stim);
 
-% LC pdf
-p_X_LC = p_X.*pLC;
-pdfLC = sum(p_X_LC, 2);
-pdfLC = pdfLC./trapz(x, pdfLC);
-pdfLC = (1 - guessRate)*pdfLC + guessRate*pdf_random_guesses; 
-pdfLC = pdfLC./trapz(x, pdfLC);
+for k = -K:K
+    Z = x - bias + k*period;
+    % p_X = exp(-(Z').^2 ./ (2*sigma_m_stim.^2)) ...
+    %       ./ sqrt(2*pi*sigma_m_stim.^2);
+    p_X = exp(-(Z'.^2).*inv2sig2) .* normconst;
+    pdf = pdf + sum(p_X,2);
+    
+    % HC
+    p_X_HC = p_X.*pHC;
+    pdfHC  = pdfHC + sum(p_X_HC, 2);
+    
+    % LC
+    p_X_LC = p_X.*pLC;
+    pdfLC  = pdfLC + sum(p_X_LC, 2);
+end
 
-%% Calculate std dev
+% PDF
+pdf = pdf ./ trapz(x,pdf);
+pdf = (1 - guessRate)*pdf + guessRate*pdfRG;
 
-% Note: this way of calculating is not right for STD as function of
-% orientation. Consider actual mean values for ori dependent std.
+% HC
+pdfHC = pdfHC ./ trapz(x,pdfHC);
 
-dx = x(2) - x(1); % Assuming uniform
-% warning("Make sure error bins are uniformly spaced")
-mu = 0; %sum( x.*pdf'*dx );
-sigma = sqrt( sum( ((x - mu).^2).*pdf'*dx ) );
+% LC
+pdfLC = pdfLC ./ trapz(x,pdfLC);
+pdfLC = (1 - guessRate)*pdfLC + guessRate*pdfRG;
 
-% For HC
-mu = 0; %sum( x.*pdfHC'*dx );
-sigmaHC = sqrt( sum( ((x - mu).^2).*pdfHC'*dx ) );
-
-% For LC
-mu = 0; %sum( x.*pdfLC'*dx );
-sigmaLC = sqrt( sum( ((x - mu).^2).*pdfLC'*dx ) );
 
 %% MAD from PDF
 % Calculate metric only after optimization is complete
 if ~optimizationFlag
     
+    %% Calculate std dev
+    % Note: this way of calculating is not right for STD as function of
+    % orientation. Consider actual mean values for ori dependent std.
+    
+    dx = x(2) - x(1); % Assuming uniform
+    % warning("Make sure error bins are uniformly spaced")
+    mu = 0; %sum( x.*pdf'*dx );
+    sigma = sqrt( sum( ((x - mu).^2).*pdf'*dx ) );
+    
+    % For HC
+    mu = 0; %sum( x.*pdfHC'*dx );
+    sigmaHC = sqrt( sum( ((x - mu).^2).*pdfHC'*dx ) );
+    
+    % For LC
+    mu = 0; %sum( x.*pdfLC'*dx );
+    sigmaLC = sqrt( sum( ((x - mu).^2).*pdfLC'*dx ) );
+
+    %% MAD from PDF
     dx = x(2)-x(1);
     F = cumsum(pdf) * dx;
     if ~isnan(F(end))
@@ -284,6 +312,9 @@ else
     mad_m = 0;
     mad_m_HC = 0;
     mad_m_LC = 0;
+    sigma = 0;
+    sigmaHC = 0;
+    sigmaLC = 0;
 end
 
 

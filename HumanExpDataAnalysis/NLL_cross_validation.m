@@ -26,7 +26,7 @@ formattedData = formatExpData(f, false, false); % no de-baising, work with raw e
 %% Cross-validate
 errBins   = -90:1:90; % this is dx which might affect fitting. This value should be optimal. not too fine. not too coarse.
 
-optParams.nStarts = 20;
+optParams.nStarts = 30;
 optParams.hyperParamC1 = 10;
 optParams.randomGuessModel = true;
 
@@ -37,7 +37,7 @@ save('./CV_Data/cross_validation_tien_full.mat', 'cv_result');
 
 load('./CV_Data/cross_validation_tien.mat', 'cv_result');
 errBins   = -90:1:90;
-optParams.nStarts = 20;
+optParams.nStarts = 30;
 optParams.hyperParamC1 = 0;
 optParams.hyperParamC2 = 0;
 optParams.randomGuessModel = true;
@@ -56,14 +56,14 @@ hold off
 ylabel("Count")
 xlabel("NLL")
 legend
-title("Fit on test data (GT: cov model data)")
+title("Fit on test data")
 
 subplot(2, 2, 2)
 histogram(nllData.deltaNLL) 
 ylabel("Count")
 xlabel("delta NLL (cov - ind)")
 legend
-title("Fit on test data (GT: cov model data)")
+title("Fit on test data")
 
 subplot(2, 2, 3)
 hold on

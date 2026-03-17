@@ -19,22 +19,17 @@ rawOriError_S = reportedOri - sampleMeanOri;
 rawOriError_S = mod(rawOriError_S + 90, 180) - 90;
 
 % Error wrt actual orientation
-rawOriError = data.dat.rawOriError;
+% rawOriError = data.dat.rawOriError;
+data.dat.rawOriError_S = rawOriError_S;
 
 % Estiamte orientation dependent bias
-stimSummary = groupsummary(data.dat, {'stimOri'}, {'mean', 'std', @(x) median(x)}, 'rawOriError');
-bias        = stimSummary.mean_rawOriError;
-bias_median = stimSummary.fun1_rawOriError;
+stimSummary = groupsummary(data.dat, {'stimOri'}, {'mean', 'std', @(x) median(x)}, 'rawOriError_S');
+bias        = stimSummary.mean_rawOriError_S;
+bias_median = stimSummary.fun1_rawOriError_S;
 
 if debias
     % debias
     stimVals = stimSummary.stimOri;
-    
-    % Error wrt to stim ori
-    for i = 1:numel(stimVals)
-        idx = stimOris == stimVals(i);
-        rawOriError(idx) = rawOriError(idx) - bias(i);
-    end
     
     % Error wrt sample mean
     for i = 1:numel(stimVals)
@@ -44,10 +39,11 @@ if debias
 
 end
 
+% Trials per condition - to create array same as in simulation
 [G, c, s, d]         = findgroups(data.dat.stimContrast, data.dat.stimSpread, data.dat.stimDur);
 grpIdxes             = unique(G);
 n_uncertainty_levels = numel(grpIdxes);
-nTrials              = numel(rawOriError(G == grpIdxes(1) & (stimOris == orientations(1))));
+nTrials              = numel(rawOriError_S(G == grpIdxes(1) & (stimOris == orientations(1))));
 
 uncertaintyVals = [c s d];
 
@@ -58,7 +54,7 @@ mads    = zeros(1, n_uncertainty_levels);
 
 for i=1:n_uncertainty_levels
     grpIdx          = grpIdxes(i);
-    grpRawErr_Flt   = rawOriError(G == grpIdx);
+    grpRawErr_Flt   = rawOriError_S(G == grpIdx);
     
     assert(all(~isnan(grpRawErr_Flt))) % there should be no nan
     pd = fitdist(grpRawErr_Flt, 'Normal'); % there should be non nan so need to filter nans
@@ -92,9 +88,9 @@ stim_dur_all          = zeros(n_uncertainty_levels, n_orientations, nTrials);
 
 % Orientation dependent std
 stimSummary = groupsummary(data.dat, {'stimContrast', 'stimSpread', 'stimDur', 'stimOri'}, ...
-    {'mean', 'std', @(x) mad(x,1)}, 'rawOriError');
-stdByOri        = reshape( stimSummary.std_rawOriError, [numel(stimSummary.std_rawOriError)/n_uncertainty_levels n_uncertainty_levels]);
-madByOri        = reshape( stimSummary.fun1_rawOriError, [numel(stimSummary.fun1_rawOriError)/n_uncertainty_levels n_uncertainty_levels]); 
+    {'mean', 'std', @(x) mad(x,1)}, 'rawOriError_S');
+stdByOri        = reshape( stimSummary.std_rawOriError_S, [numel(stimSummary.std_rawOriError_S)/n_uncertainty_levels n_uncertainty_levels]);
+madByOri        = reshape( stimSummary.fun1_rawOriError_S, [numel(stimSummary.fun1_rawOriError_S)/n_uncertainty_levels n_uncertainty_levels]); 
 stdByOri        = stdByOri';
 madByOri        = madByOri';
 
@@ -108,7 +104,7 @@ for i=1:n_uncertainty_levels
         fltIDx = ( G == grpIdx) & (stimOris == orientations(j)) ;
         
         % WRT actual stim ori
-        grpRawErr_Flt   = rawOriError(fltIDx);
+        grpRawErr_Flt   = rawOriError_S(fltIDx);
         grpStimOri      = data.dat.stimOri(fltIDx);
         grpOriResp      = data.dat.reportedOri(fltIDx);
         grpReportedConf = data.dat.reportedConf(fltIDx); 
@@ -187,8 +183,6 @@ for i = 1:3
 
 end
 
-if ~isempty(combinations)
-
 % Contrast and spread
 tableVals      = [data.dat.stimContrast, data.dat.stimSpread, data.dat.stimDur]; % Combine relevant columns from the table
 rowsToKeep     = ismember(tableVals, combinations.ct_sp, 'rows');                % Find rows matching any combination in factorialCombinations1
@@ -214,7 +208,7 @@ for i=1:n_uncertainty_levels
     fltIDx = ( G == grpIdx) ;
     
     % WRT actual stim ori
-    grpRawErr_Flt   = filteredTable.rawOriError(fltIDx);
+    grpRawErr_Flt   = filteredTable.rawOriError_S(fltIDx);
     grpStimOri      = filteredTable.stimOri(fltIDx);
     grpOriResp      = filteredTable.reportedOri(fltIDx);
     grpReportedConf = filteredTable.reportedConf(fltIDx);
@@ -252,7 +246,7 @@ for i=1:n_uncertainty_levels
     fltIDx = ( G == grpIdx) ;
     
     % WRT actual stim ori
-    grpRawErr_Flt   = filteredTable.rawOriError(fltIDx);
+    grpRawErr_Flt   = filteredTable.rawOriError_S(fltIDx);
     grpStimOri      = filteredTable.stimOri(fltIDx);
     grpOriResp      = filteredTable.reportedOri(fltIDx);
     grpReportedConf = filteredTable.reportedConf(fltIDx);
@@ -295,7 +289,7 @@ for i=1:n_uncertainty_levels
     fltIDx = ( G == grpIdx) ;
     
     % WRT actual stim ori
-    grpRawErr_Flt   = filteredTable.rawOriError(fltIDx);
+    grpRawErr_Flt   = filteredTable.rawOriError_S(fltIDx);
     grpStimOri      = filteredTable.stimOri(fltIDx);
     grpOriResp      = filteredTable.reportedOri(fltIDx);
     grpReportedConf = filteredTable.reportedConf(fltIDx);
@@ -333,7 +327,7 @@ for i=1:n_uncertainty_levels
     fltIDx = ( G == grpIdx) ;
     
     % WRT actual stim ori
-    grpRawErr_Flt   = filteredTable.rawOriError(fltIDx);
+    grpRawErr_Flt   = filteredTable.rawOriError_S(fltIDx);
     grpStimOri      = filteredTable.stimOri(fltIDx);
     grpOriResp      = filteredTable.reportedOri(fltIDx);
     grpReportedConf = filteredTable.reportedConf(fltIDx);
@@ -350,7 +344,6 @@ retData.marginal_spread_theta_resp_all2         = marginal_spread_theta_resp_all
 retData.marginal_spread_resp_err_all2           = marginal_spread_resp_err_all;
 retData.marginal_spread_confidence_report_all2  = marginal_spread_confidence_report_all;
 
-end
 
 
 end
@@ -363,7 +356,7 @@ fitStds = zeros(1, n_uncertainty_levels);
 
 for i=1:n_uncertainty_levels
     grpIdx          = grpIdxes(i);
-    grpRawErr_Flt   = filteredTable.rawOriError(G == grpIdx);
+    grpRawErr_Flt   = filteredTable.rawOriError_S(G == grpIdx);
     
     assert(all(~isnan(grpRawErr_Flt))) % there should be no nan
     pd = fitdist(grpRawErr_Flt, 'Normal'); % there should be non nan so need to filter nans

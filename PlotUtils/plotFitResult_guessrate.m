@@ -139,25 +139,75 @@ for i=1:n_uncertainty_levels
 
     idx = idxSorted(i);
 
-    subplot(2, n_uncertainty_levels/2, i);
+    cR = confReport(idx, :);
+    dataHC = grpOriErr(idx, cR == 1);
+    dataLC = grpOriErr(idx, cR == 0);
+
+    subplot(2, n_uncertainty_levels, i);
     hold on;
     
-    y = pdf_stim_LC(idx, :);
-    scatter(errBins, y(:), 'filled', DisplayName="LC");
-    plot(errBins, analyticalSols{idx}.analyticalPDF_LC, HandleVisibility="off", LineWidth=1.5);
+    % y = pdf_stim_LC(idx, :);
+    % scatter(errBins, y(:), 'filled', DisplayName="LC");
+    histogram(dataLC, errBins, Normalization="pdf");
+    plot(errBins, analyticalSols{idx}.analyticalPDF_LC, DisplayName="fit", LineWidth=1.5);
+    hold off
+
+    %xline(0, LineStyle="--"); Probalamatic line
+    xlabel("Error (deg)");
+    ylabel("P( Err / LC )");
+    title(sprintf("C: %.2f, S: %d, D: %.2f",  ...
+        data.uncertaintyVals(idx, 1), ...
+        data.uncertaintyVals(idx, 2), ...
+        data.uncertaintyVals(idx, 3)))
+
+    legend;
     
-    y = pdf_stim_HC(idx, :);
-    scatter(errBins, y(:), 'filled', DisplayName="HC");
-    plot(errBins, analyticalSols{idx}.analyticalPDF_HC, HandleVisibility="off", LineWidth=1.5);
+    subplot(2, n_uncertainty_levels, n_uncertainty_levels + i);
+    hold on;
+
+    % y = pdf_stim_HC(idx, :);
+    % scatter(errBins, y(:), 'filled', DisplayName="HC");
+    histogram(dataHC, errBins, Normalization="pdf");
+    plot(errBins, analyticalSols{idx}.analyticalPDF_HC, DisplayName="fit", LineWidth=1.5);
+    
+    hold off
     
     %xline(0, LineStyle="--"); Probalamatic line
     xlabel("Error (deg)");
-    ylabel("count");
-    title("")
+    ylabel("P( Err / HC )");
 
     legend;
     hold off;
 
+end
+
+figure 
+
+for i=1:n_uncertainty_levels
+
+    idx = idxSorted(i);
+    errData = grpOriErr(idx, :);
+
+    subplot(2, n_uncertainty_levels/2, i);
+    hold on;
+
+    % y = pdf_stim_HC(idx, :);
+    % scatter(errBins, y(:), 'filled', DisplayName="HC");
+    histogram(errData, errBins, Normalization="pdf");
+    plot(errBins, analyticalSols{idx}.analyticalPDF, DisplayName="fit", LineWidth=1.5);
+    
+    hold off
+    
+    %xline(0, LineStyle="--"); Probalamatic line
+    xlabel("Error (deg)");
+    ylabel("P( Err )");
+    title(sprintf("C: %.2f, S: %d, D: %.2f",  ...
+        data.uncertaintyVals(idx, 1), ...
+        data.uncertaintyVals(idx, 2), ...
+        data.uncertaintyVals(idx, 3)))
+
+    legend;
+    hold off;
 end
 
 % Plot error

@@ -5,7 +5,7 @@
 %%%
 
 clear all
-close all
+% close all
 
 % addpath('C:\Users\avinash1598\Desktop\Uncertainty\LLScriptsUtils\')
 % addpath('C:\Users\avinash1598\Desktop\Uncertainty\PlotUtils\')
@@ -166,9 +166,9 @@ save('ind_data_cov_fit_full_model_fit_method_2_2500_trials.dat', 'res');
 modelType = "cov";
 
 if modelType == "cov"
-    load('ind_data_cov_fit_full_model_fit_method_2_2500_trials.mat')
+    load('ind_data_cov_fit_full_model_fit_method_2_25_trials.mat')
 else
-    load('ind_data_full_model_fit_method_2_2500_trials.mat')
+    load('ind_data_full_model_fit_method_2_25_trials.mat')
 end
 
 
@@ -176,13 +176,17 @@ data = res.data;
 result = res.result;
 errBins = res.errBins;
 
+data.theta_true_all = data.stimOri;
+data.theta_resp_all = data.reportedOri;
+
 theta_true_all = data.theta_true_all;
 theta_resp_all = data.theta_resp_all;
-resp_err_all = data.resp_err_all;
+resp_err_all   = data.resp_err_all;
 confidence_report_all = data.confidence_report_all;
-orientations          = data.orientations;
+orientations          = data.orientations';
 
-resp_err_all_reshaped = reshape(data.resp_err_all, 6, []);
+resp_err_all_reshaped = reshape(resp_err_all, uncertainty_levels, []);
+confidence_report_all_reshaped = reshape(confidence_report_all, uncertainty_levels, []);
 
 A = permute(data.resp_err_all, [2 3 1]);  
 B = reshape(A, numel(orientations), []);
@@ -454,3 +458,83 @@ scatter(orientations, bias)
 hold on
 plot(orientations, oriBias)
 hold off
+
+
+%%
+% PDFs by uncertainty and ori
+figure
+
+n_uncertainty_levels = numel(b);
+n_ori = numel(orientations);
+rvOriErr = errBins;
+
+for i=1:n_uncertainty_levels
+    
+    figure
+
+    modelParams.b                   = opt_param_sigma_s(i);
+    modelParams.a                   = gt_sigma_ori_scale*opt_param_sigma_s(i);
+    modelParams.biasAmp             = opt_param_bias;
+    modelParams.scale               = opt_param_scale;
+    modelParams.Cc                  = opt_param_Cc;
+    modelParams.sigma_meta          = opt_param_sigma_meta;
+    modelParams.guessRate           = opt_param_guessrate;
+    
+    if modelType == "ind"
+        modelParams.shape               = opt_param_shape;
+        retData = getEstimatesPDFs(orientations, rvOriErr, modelParams, false);
+    else
+        retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams, false);
+    end
+    
+    for j = 1:n_ori
+        
+        
+        subplot(3, n_ori, j)
+        hold on
+        
+        grpOriErr = squeeze( resp_err_all(i, j, :) );
+        histogram(grpOriErr, rvOriErr, Normalization="pdf");
+        plot(rvOriErr, retData.analyticalPDF_stim(j, :), LineWidth=1.5);
+        
+        xlabel("Orientation (deg)")
+        ylabel("count")
+        xlim([-20 20])
+        title(sprintf("Orientation %d", orientations(j)))
+        
+        hold off
+    
+        % HC
+        subplot(3, n_ori, n_ori+j)
+        hold on
+        
+        confReport_ = squeeze( confidence_report_all(i, j, :) );
+        
+        errHC = grpOriErr(confReport_ == 1);
+        histogram(errHC, rvOriErr, Normalization="pdf");
+        plot(rvOriErr, retData.analyticalPDF_stim_HC(j, :), LineWidth=1.5);
+        
+        xlabel("Orientation (deg)")
+        ylabel("count")
+        xlim([-20 20])
+        title("HC")
+        
+        hold off
+    
+        % LC
+        subplot(3, n_ori, 2*n_ori+j)
+        hold on
+        
+        errHC = grpOriErr(confReport_ == 0);
+        histogram(errHC, rvOriErr, Normalization="pdf");
+        plot(rvOriErr, retData.analyticalPDF_stim_LC(j, :), LineWidth=1.5);
+        
+        xlabel("Orientation (deg)")
+        ylabel("count")
+        xlim([-20 20])
+        title("LC")
+        
+        hold off
+    end
+
+end

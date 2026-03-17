@@ -1,0 +1,276 @@
+%%%
+% Questions to think about:
+% 1. Does 'a' depend upon 'b'
+%
+% Bindwidth = 2 (roughly ok for error std in range of 10 - 40)
+% Samples count = 100 (seems roubust to different sigma values)
+% K = 1 (good for err std less than 80)
+% Binwidth too fine wht happens
+%%%
+
+clear all
+close all
+
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
+
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/LLScriptsTrialData/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
+
+orientations     = 0:15:175; %linspace(0, 180, 18); %0:10:180; % linspace(0, 180, 18);
+ntrials_per_ori  = 2500; %250;
+b                = linspace(1, 2.2, 6); % linspace(1, 2.2, 8); Note: different minimum noise level (0.1). Choose b such that average noise level ranges from low to high (relative to internal noise level)
+a                = 0.67.*b; %0.67.*b;   % Does a depend upon b? Yes
+biasAmp          = 0.5; %0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
+scale            = 0.5; %0.5;
+sigma_meta       = 0.6;
+Cc               = 0.5; 
+
+% biasAmp          = 0;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
+% scale            = 343.3225;
+% sigma_meta       = 10.83;
+% Cc               = 0.05; 
+guessRate        = 0.1; %0.1; % While fitting try keeping it below 0.1 % For each trial with this prob sample uniformly from 0 to 179
+
+b = [14.9007 22.1322 21.0046 27.8742 36.0335 39.5992];
+% b = [6.9007 22.1322 21.0046 27.8742 36.0335 39.5992];
+a = 0.1626.*b;
+biasAmp          = 2.6466; %0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
+scale            = 465.4275; %0.5;
+sigma_meta       = 6.8298;
+Cc               = 0.0371; 
+guessRate        = 0.031;
+% In actual data correct for bias
+
+% Preallocate arrays
+n_theta                  = numel(orientations);
+uncertainty_levels       = numel(b);
+
+% Only record data which would actually be recorded during experiment
+theta_true_all        = zeros(uncertainty_levels, n_theta, ntrials_per_ori);
+theta_resp_all        = zeros(uncertainty_levels, n_theta, ntrials_per_ori); % Recorded theta based on user response
+
+confidence_report_all = zeros(uncertainty_levels, n_theta, ntrials_per_ori);
+
+% Simulation loop
+% Stimulus dependent sensory noise
+% sigma_s = [15.5048, 19.7808, 24.9028, 30.5509, 34.0230, 37.4675]';
+% sigma_s_stim = repmat(sigma_s, [1 n_theta]);
+% sigma_s_stim = b' + a'*(abs(sind(2*orientations)));
+% bias         = biasAmp*sind(2*orientations); 
+
+sigma_s_stim = b' + a'*(abs(sind(orientations - 90)));
+bias         = biasAmp*sind(2*orientations); % This remains the same
+
+for l=1:uncertainty_levels
+    for i = 1:n_theta
+        theta_true = orientations(i);   % True orientation
+        trials = ntrials_per_ori;
+        
+        % Step1: Using estimate of this uncertainty, the subject estimates
+        % the orientation
+        % Internal estimate (Gaussian noise) - Note: this is not wraped
+        % In actual behavioral data this will be wraped
+        % theta_est = theta_true + sigma_p * randn(trials, 1);
+        % Find doubly stochastic theta
+        
+        % Multiplicative
+        shape = sigma_s_stim(l, i).^2 / scale; % divide by scale so that mean is sigma_s
+        gain = gamrnd(shape, scale, [trials 1]);
+        sigma_m_stim = sqrt( gain );
+        mean_m_stim = theta_true + bias(i);
+        
+        % TODO: take into account bias?
+        % Wrap the angle at the plotting stage. Note: warapping should be
+        % performed according to the true angle.
+        theta_est = mean_m_stim + sigma_m_stim .* randn(trials, 1);
+        theta_est = mod(theta_est, 180); % Since this is orientation, wrap the angle between 0 and 180
+        
+        % Simulat guess rate
+        guess_tl_idx = randi([1 trials], floor( trials*guessRate ), 1);
+        guessOris = 180*rand(numel(guess_tl_idx), 1);
+        theta_est(guess_tl_idx) = guessOris;
+        
+        assert(numel(sigma_m_stim) == trials);
+        
+        % Step1: Subject first gets an estimate of its uncertainty
+        % Subject’s estimate of their uncertainty (meta-uncertainty)
+        mu_log = log(sigma_m_stim.^2 ./ sqrt(sigma_meta.^2 + sigma_m_stim.^2));
+        sigma_log = sqrt(log(1 + (sigma_meta.^2 ./ sigma_m_stim.^2)));
+        sigma_hat = lognrnd(mu_log, sigma_log, trials, 1);
+        
+        % Confidence variable
+        Vc = 1 ./ sigma_hat;
+        
+        % Store
+        theta_true_all(l, i, :)         = theta_true;
+        theta_resp_all(l, i, :)         = theta_est;
+        confidence_report_all(l, i, :)  = Vc > Cc;
+    end
+end
+
+% Plot the performance curves
+resp_err_all = (theta_resp_all - theta_true_all);
+resp_err_all = mod(resp_err_all + 90, 180) - 90; % Find minimum acute angle error
+
+resp_err_all_reshaped = reshape(resp_err_all, uncertainty_levels, []);
+confidence_report_all_reshaped = reshape(confidence_report_all, uncertainty_levels, []);
+
+% Save model data
+data.stimOri     = theta_true_all;
+data.reportedOri = theta_resp_all;
+data.err         = resp_err_all;
+data.confReport  = confidence_report_all;
+
+data.params.sigma_s_reduced_model = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 )';
+data.params.b                     = b;
+data.params.a                     = a;
+data.params.biasAmp               = biasAmp;
+data.params.scale                 = scale;
+data.params.sigma_meta            = sigma_meta;
+data.params.Cc                    = Cc;
+data.params.guessRate             = guessRate;
+
+% save('modelContOriData_cov.mat', "data")
+
+%% Get analytical solution
+%% Gamma samples count
+s_cnts    = [5 10 20 30 50 70 100 200 500 1000];
+bin_width =[0.1 0.5 1 1.5 2 2.2 3 5 10];
+errors    = zeros(uncertainty_levels, numel(s_cnts), numel(bin_width));
+
+% Bindwidth threshold Depends upon data
+% Samples count of 100 is in general good enough
+
+for i=1:uncertainty_levels
+    for j=1:numel(bin_width)
+        
+        rvOriErr = -90:bin_width(j):90; %
+        centers = rvOriErr;
+        binWidth = mean(diff(centers));
+        edges = [centers - binWidth/2, centers(end) + binWidth/2];
+        
+        grpOriErr = resp_err_all_reshaped(i, :);
+        cR = confidence_report_all_reshaped(i, :);
+        dataHC = resp_err_all_reshaped(i, cR == 1);
+        dataLC = resp_err_all_reshaped(i, cR == 0);
+        
+        % GT
+        [pdf, ~] = histcounts(grpOriErr, ...
+                'Normalization', 'pdf', ...
+                'BinEdges', edges);
+    
+        [pdfHC, ~] = histcounts(dataHC, ...
+                'Normalization', 'pdf', ...
+                'BinEdges', edges);
+    
+        [pdfLC, ~] = histcounts(dataLC, ...
+                'Normalization', 'pdf', ...
+                'BinEdges', edges);
+    
+        for k=1:numel(s_cnts)
+        
+            modelParams.b                   = b(i);
+            modelParams.a                   = a(i);
+            modelParams.sigma_s             = data.params.sigma_s_reduced_model(i); % It would fit nicely if it were opt
+            modelParams.biasAmp             = biasAmp;
+            modelParams.scale               = scale;
+            modelParams.Cc                  = Cc;
+            modelParams.sigma_meta          = sigma_meta;
+            modelParams.guessRate           = guessRate;
+            modelParams.internalNoiseSamplesCnt = s_cnts(k);
+            
+            retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams, true);
+    
+            err = (pdf - retData.analyticalPDF).^2 + ...
+                (pdfHC - retData.analyticalPDF_HC).^2 + ...
+                (pdfLC - retData.analyticalPDF_LC).^2;
+    
+            errors(i, k, j) = mean( err(:) );
+        end
+    end
+    
+end
+
+figure
+for i=1:numel(bin_width)
+    subplot(2, 5, i)
+    plot(s_cnts, squeeze( errors(:, :, i) ), LineWidth=2)
+    xlabel("Gamma sample counts")
+    ylabel("Mean Error (GT - Analytical)")
+    title(sprintf("Bin width: %.2f", bin_width(i)))
+    legend
+end
+
+figure
+for i=1:numel(s_cnts)
+    subplot(2, 5, i)
+    plot(bin_width, squeeze( errors(:, i, :) ), LineWidth=2)
+    xlabel("Bin width")
+    ylabel("Mean Error (GT - Analytical)")
+    title(sprintf("Samples cnt: %.2f", s_cnts(i)))
+    legend
+end
+
+% %% bin width
+% errors = zeros(uncertainty_levels, 10);
+% bin_width=[0.1 0.5 1 1.5 2 2.5 3 5 10 30 45];
+% 
+% for i=1:uncertainty_levels
+%     for j=1:numel(bin_width)
+% 
+%         rvOriErr = -90:bin_width(j):90; %
+%         centers = rvOriErr;
+%         binWidth = mean(diff(centers));
+%         edges = [centers - binWidth/2, centers(end) + binWidth/2];
+%         
+%         grpOriErr = resp_err_all_reshaped(i, :);
+%         cR = confidence_report_all_reshaped(i, :);
+%         dataHC = resp_err_all_reshaped(i, cR == 1);
+%         dataLC = resp_err_all_reshaped(i, cR == 0);
+%         
+%         % GT
+%         [pdf, ~] = histcounts(grpOriErr, ...
+%                 'Normalization', 'pdf', ...
+%                 'BinEdges', edges);
+%     
+%         [pdfHC, ~] = histcounts(dataHC, ...
+%                 'Normalization', 'pdf', ...
+%                 'BinEdges', edges);
+%     
+%         [pdfLC, ~] = histcounts(dataLC, ...
+%                 'Normalization', 'pdf', ...
+%                 'BinEdges', edges);
+% 
+%         modelParams.b                   = b(i);
+%         modelParams.a                   = a(i);
+%         modelParams.sigma_s             = data.params.sigma_s_reduced_model(i); % It would fit nicely if it were opt
+%         modelParams.biasAmp             = biasAmp;
+%         modelParams.scale               = scale;
+%         modelParams.Cc                  = Cc;
+%         modelParams.sigma_meta          = sigma_meta;
+%         modelParams.guessRate           = guessRate;
+%         modelParams.internalNoiseSamplesCnt = 100;
+%         
+%         retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams, true);
+%         
+%         err = (pdf - retData.analyticalPDF).^2 + ...
+%             (pdfHC - retData.analyticalPDF_HC).^2 + ...
+%             (pdfLC - retData.analyticalPDF_LC).^2;
+%         
+%         errors(i, j) = mean( err(:) );
+%     end
+%     
+% end
+% 
+% figure
+% plot(bin_width, errors, LineWidth=2)
+% xlabel("Bin width")
+% ylabel("Mean Error (GT - Analytical)")
+% title("Orientation error bin width")
+% legend

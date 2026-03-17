@@ -7,13 +7,19 @@
 clear all
 close all
 
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
+
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/')
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/LLScriptsTrialData/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
 
 orientations     = 0:15:175; %linspace(0, 180, 18); %0:10:180; % linspace(0, 180, 18);
-ntrials_per_ori  = 25; %250;
+ntrials_per_ori  = 2500; %250;
 b                = linspace(1, 2.2, 6); % linspace(1, 2.2, 8); Note: different minimum noise level (0.1). Choose b such that average noise level ranges from low to high (relative to internal noise level)
 a                = 0.67.*b; %0.67.*b;   % Does a depend upon b? Yes
 biasAmp          = 0.5; %0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
@@ -25,8 +31,16 @@ Cc               = 0.5;
 % scale            = 343.3225;
 % sigma_meta       = 10.83;
 % Cc               = 0.05; 
-guessRate        = 0.0; %0.1; % While fitting try keeping it below 0.1 % For each trial with this prob sample uniformly from 0 to 179
+guessRate        = 0.1; %0.1; % While fitting try keeping it below 0.1 % For each trial with this prob sample uniformly from 0 to 179
 
+b = [14.9007 22.1322 21.0046 27.8742 36.0335 39.5992];
+% b = [6.9007 22.1322 21.0046 27.8742 36.0335 39.5992];
+a = 0.1626.*b;
+biasAmp          = 2.6466; %0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
+scale            = 465.4275; %0.5;
+sigma_meta       = 6.8298;
+Cc               = 0.0371; 
+guessRate        = 0.031;
 % In actual data correct for bias
 
 % Preallocate arrays
@@ -129,7 +143,7 @@ anlytcl_mad_m_stim_HC = zeros(1, uncertainty_levels);
 anlytcl_mad_m_stim_LC = zeros(1, uncertainty_levels);
 
 for i=1:uncertainty_levels
-    rvOriErr = -90:0.5:90;
+    rvOriErr = -90:2:90; %
     
     modelParams.b                   = b(i);
     modelParams.a                   = a(i);
@@ -140,15 +154,17 @@ for i=1:uncertainty_levels
     modelParams.sigma_meta          = sigma_meta;
     modelParams.guessRate           = guessRate;
     
-%     tic
-%     retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams, true);
-%     elapsed_time = toc;
-%     disp(['Execution time: ', num2str(elapsed_time), ' seconds']);
-    
     tic
-    retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
+    [~] = getEstimationsPDF_cov(orientations, modelParams, true);
     elapsed_time = toc;
-    disp(['Execution time::::: ', num2str(elapsed_time), ' seconds']);
+    disp(['Execution time: ', num2str(elapsed_time), ' seconds']);
+    
+    retData = getEstimationsPDF_cov(orientations, modelParams, false);
+
+%     tic
+%     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
+%     elapsed_time = toc;
+%     disp(['Execution time::::: ', num2str(elapsed_time), ' seconds']);
     
     anlytcl_sigma_m_stim(i)    = retData.E_sigma_m;
     anlytcl_sigma_m_stim_HC(i) = retData.E_sigma_m_HC;
@@ -176,21 +192,93 @@ for i=1:n_uncertainty_levels
     modelParams.Cc                  = Cc;
     modelParams.sigma_meta          = sigma_meta;
     modelParams.guessRate           = guessRate;
-    
-    % retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams);
-    retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
-    
+        
+
     subplot(2, n_uncertainty_levels/2, i)
     hold on
-    
     grpOriErr = resp_err_all_reshaped(i, :);
-    histogram(grpOriErr, rvOriErr, Normalization="pdf");
-    plot(rvOriErr, retData.analyticalPDF, LineWidth=1.5);
+    histogram(grpOriErr, rvOriErr, Normalization="pdf"); % Normalization="pdf"
+    retData = getEstimationsPDF_cov(orientations, modelParams, false);
+    %     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
+
+    plot(retData.rvOriErrs, retData.analyticalPDF, LineWidth=1.5);
     
+%     for j=[0.1 1 3]
+%         errbn = -90:j:90;
+%         
+%         modelParams.b                   = b(i);
+%         modelParams.a                   = a(i);
+%         modelParams.sigma_s             = data.params.sigma_s_reduced_model(i);
+%         modelParams.biasAmp             = biasAmp;
+%         modelParams.scale               = scale;
+%         modelParams.Cc                  = Cc;
+%         modelParams.sigma_meta          = sigma_meta;
+%         modelParams.guessRate           = guessRate;
+%         
+%         retData = getEstimationsPDF_cov(orientations, errbn, modelParams, true);
+%     %     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
+% 
+%         plot(retData.rvOriErrs, retData.analyticalPDF, LineWidth=1.5, DisplayName=""+j);
+%     end
+    
+    %xlim([-90, 90])
     xlabel("Orientation (deg)")
     ylabel("count")
+    % legend
     
     hold off
+end
+
+% PDFs by confidence and uncertainty
+% Histogram by confidence
+% Plot PDFs
+figure 
+
+for i=1:n_uncertainty_levels
+
+    modelParams.b                   = b(i);
+    modelParams.a                   = a(i);
+    modelParams.sigma_s             = data.params.sigma_s_reduced_model(i);
+    modelParams.biasAmp             = biasAmp;
+    modelParams.scale               = scale;
+    modelParams.Cc                  = Cc;
+    modelParams.sigma_meta          = sigma_meta;
+    modelParams.guessRate           = guessRate;
+    
+    retData = getEstimationsPDF_cov(orientations, modelParams, false);
+
+    cR = confidence_report_all_reshaped(i, :);
+    dataHC = resp_err_all_reshaped(i, cR == 1);
+    dataLC = resp_err_all_reshaped(i, cR == 0);
+    
+    subplot(2, n_uncertainty_levels, i);
+    hold on
+    
+    histogram(dataLC, rvOriErr, Normalization="pdf");
+    plot(rvOriErr, retData.analyticalPDF_LC, HandleVisibility="off", LineWidth=1.5)
+    
+    hold off
+
+    xline(0, LineStyle="--")
+    xlabel("Error (deg)")
+    ylabel("count")
+    legend
+    % title("")
+
+    subplot(2, n_uncertainty_levels, n_uncertainty_levels + i);
+    hold on;
+
+    histogram(dataHC, rvOriErr, Normalization="pdf");
+    plot(rvOriErr, retData.analyticalPDF_HC, HandleVisibility="off", LineWidth=1.5)
+    
+    xline(0, LineStyle="--")
+    xlabel("Error (deg)")
+    ylabel("count")
+    % title("")
+
+    legend
+    hold off
+
 end
 
 %% Plot results

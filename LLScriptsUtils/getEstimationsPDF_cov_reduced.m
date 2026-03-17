@@ -103,8 +103,8 @@ pdf = pdf./trapz(x, pdf);
 p_X_HC = p_X.*pHC;
 pdfHC = sum(p_X_HC, 2);
 pdfHC = pdfHC./trapz(x, pdfHC);
-pdfHC = (1 - guessRate)*pdfHC + guessRate*pdf_random_guesses; 
-pdfHC = pdfHC./trapz(x, pdfHC);
+% pdfHC = (1 - guessRate)*pdfHC + guessRate*pdf_random_guesses; 
+% pdfHC = pdfHC./trapz(x, pdfHC);
 
 % LC pdf
 p_X_LC = p_X.*pLC;

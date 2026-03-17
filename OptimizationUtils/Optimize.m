@@ -58,15 +58,15 @@ function result = Optimize(data, errBins, modelType, fltTrlIdx, optParams, fitTy
             data.orientations, ...
             true);
     else
-%         binnedData = buildBinnedData( ...
-%             n_uncertainty_levels, ...
-%             errBins, ...
-%             trlErrors, ...
-%             trlConfReports, ...
-%             trlUncertaintyLevels, ...
-%             trlStimOris, ...
-%             uniqOrientations, ...
-%             false);
+        binnedData = buildBinnedData( ...
+            n_uncertainty_levels, ...
+            errBins, ...
+            trlErrors, ...
+            trlConfReports, ...
+            trlUncertaintyLevels, ...
+            trlStimOris, ...
+            data.orientations, ...
+            false);
     end
     
     metaData.n_levels      = n_uncertainty_levels;
@@ -147,7 +147,8 @@ parfor itr = 1:nStarts
             % Bounds (ga requires finite bounds!)
             lb = zeros(size(params));     % same as before
             ub = inf( 1, numel(params) ); % example finite upper bounds
-            ub(end) = 0.1; % Upper bound for last parameter i.e. guessrate
+            ub(end) = 1; % Upper bound for last parameter i.e. guessrate
+            % warning("No bound on guess rate.")
             
             warning('off','all')
             
@@ -178,7 +179,7 @@ parfor itr = 1:nStarts
             success = true;
 
         catch ME
-            disp(ME)
+            %disp(ME)
         end
     end
 
@@ -245,7 +246,7 @@ parfor itr = 1:nStarts
             % Bounds (ga requires finite bounds!)
             lb = zeros(size(params));     % same as before
             ub = inf( 1, numel(params) ); % example finite upper bounds
-            ub(end - 2) = 0.1; % Upper bound for last parameter i.e. guessrate
+            ub(end - 2) = 1; % 0.1 (don't have any) Upper bound for last parameter i.e. guessrate
             
             warning('off','all')
             
@@ -253,7 +254,8 @@ parfor itr = 1:nStarts
                 'Display', 'iter', ...
                 'Algorithm', 'sqp', ...          
                 'MaxIterations', 1000, ...
-                'MaxFunctionEvaluations', 20000);
+                'MaxFunctionEvaluations', 20000, ...
+                'OutputFcn', @stopAfterOneHour);
             
             x0 = params;   % Initial guess (required for fmincon)
             
@@ -288,4 +290,20 @@ results.f = f_all;
 % First verify and then later pick the minimum nll
 end
 
+function stop = stopAfterOneHour(~, optimValues, state)
+
+persistent startTime
+stop = false;
+
+switch state
+    case 'init'
+        startTime = tic;
+
+    case 'iter'
+        if toc(startTime) > 3000
+            stop = true;
+            fprintf('Stopped: exceeded 1 hour.\n');
+        end
+end
+end
 

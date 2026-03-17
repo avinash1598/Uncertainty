@@ -86,6 +86,7 @@ end
 % end
 
 % NLL loss
+
 ll_HC = binned_err_HC .* log( currPdfFit_HC.*curr_pHC + eps );
 ll_LC = binned_err_LC .* log( currPdfFit_LC.*curr_pLC + eps );
 nll = - ( sum(ll_HC(:)) + sum(ll_LC(:)) );

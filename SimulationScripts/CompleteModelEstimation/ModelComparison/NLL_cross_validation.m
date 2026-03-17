@@ -35,17 +35,20 @@ cv_result = NLLCrossValidate(modelData.data, errBins, 5, 5, optParams, 'full');
 save('./CV_Data/cross_validation_full_ind_model_fit_method_2.mat', 'cv_result'); % TODO: chnage it to ind model
 
 %% NLL on test data
-errBins   = -90:0.1:90;
+errBins   = -90:0.5:90;
 
-cv_result = load('./CV_Data/cross_validation_ind_model.mat');
+load('./CV_Data/cross_validation_full_ind_model_fit_method_2.mat');
 
-fitType = "reduced";
+modelData                            = cv_result.data;
+modelData.data.theta_true_all        = modelData.data.stimOri;
+
+fitType = "full";
 optParams.nStarts = 30;
 optParams.hyperParamC1 = 0;
 optParams.hyperParamC2 = 0;
 optParams.randomGuessModel = true;
 
-nllData = computeNLL_CV(modelData.data, errBins, cv_result.cv_result, optParams, fitType); 
+nllData = computeNLL_CV(modelData.data, errBins, cv_result, optParams, fitType); 
 
 %
 figure
@@ -90,7 +93,7 @@ title("bestfit fvals (train dataset)")
 
 %% Make plots
 modelParams = nllData.paramsCovModel;
-plotFitResult_guessrate(modelData.data, modelParams, "cov", errBins, false)
+plotFitResult_guessrate(modelData.data, modelParams, "cov", errBins, true)
 
 % Display parameters
 for i =1:6
@@ -101,12 +104,12 @@ fprintf("Scale Fit: %.4f \n", modelParams(i + 1))
 fprintf("Meta Fit: %.4f \n", modelParams(i + 2))
 fprintf("Cc Fit: %.4f \n", modelParams(i + 3))
 fprintf("GR Fit: %.4f \n", modelParams(i + 4))
-% fprintf("Ori scale Fit: %.4f \n", modelParams(i + 5))
-% fprintf("Bias: %.4f \n", modelParams(i + 6))
+fprintf("Ori scale Fit: %.4f \n", modelParams(i + 5))
+fprintf("Bias: %.4f \n", modelParams(i + 6))
 disp('\n\n')
 
 modelParams = nllData.paramsIndModel;
-plotFitResult_guessrate(modelData.data, modelParams, "ind", errBins, false)
+plotFitResult_guessrate(modelData.data, modelParams, "ind", errBins, true)
 
 % Display parameters
 for i =1:6
@@ -118,5 +121,5 @@ fprintf("Scale Fit: %.4f \n", modelParams(i + 2))
 fprintf("Meta Fit: %.4f \n", modelParams(i + 3))
 fprintf("Cc Fit: %.4f \n", modelParams(i + 4))
 fprintf("GR Fit: %.4f \n", modelParams(i + 5))
-% fprintf("Ori scale Fit: %.4f \n", modelParams(i + 6))
-% fprintf("Bias: %.4f \n", modelParams(i + 7))
+fprintf("Ori scale Fit: %.4f \n", modelParams(i + 6))
+fprintf("Bias: %.4f \n", modelParams(i + 7))

@@ -7,12 +7,14 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/HumanExpDa
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/HumanExpDataAnalysis/Data/COR31.mat');  % Tien
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/HumanExpDataAnalysis/Data/COR32.mat');  % Jiaming
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/HumanExpDataAnalysis/Data/COR33.mat');  % Akash
-data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/HumanExpDataAnalysis/Data/CORNFB01.mat'); % Yichao
+% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/HumanExpDataAnalysis/Data/CORNFB01.mat'); % Yichao
+% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB02.mat'); % Yichao
+data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB02.mat');   % Jonathan
 
-fltData = data.dat( data.dat.session > 0 , :);
+fltData = data.dat( data.dat.session > 2 , :);
 % formattedData = formatExpData(data);
 f.dat = fltData;
-formattedData = formatExpData(f, false, false);
+formattedData = formatExpData(f, false, true);
 rvOriErr = -90:3:90;
 
 %% Data structures

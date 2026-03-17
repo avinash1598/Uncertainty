@@ -91,7 +91,7 @@ save('cross_validation_cov.mat', 'Data_');
 cr_data = load('./CV_Data/cross_validation_ind.mat');
 nPerm   = numel( cr_data.Data_.foldIDs );
 K       = numel( cr_data.Data_.resultsListCov ) / nPerm;
-n       = numel( cr_data.Data_.resultsListCov );
+n       = numel( cr_data.Data_.resultsListCov ); % 19
 itr     = numel( cr_data.Data_.resultsListCov{n}.f );
 
 foldIDs = cr_data.Data_.foldIDs;
@@ -120,8 +120,8 @@ for h=1:nPerm
 %         if (K*(h-1) + k) >= 20
 %             continue
 %         end
-% 
-%         disp( (K*(h-1) + k) )
+
+        disp( (K*(h-1) + k) )
 
         % ---- Split trials ----
         testIdx  = (foldID == k);

@@ -22,11 +22,13 @@ end
 % Exp data
 trlData              = convertToTrialData(data);
 n_uncertainty_levels = trlData.n_uncertainty_levels;
-% trlErrors            = trlData.trlErrors;
-% trlConfReports       = trlData.trlConfReports;
-% trlUncertaintyLevels = trlData.trlUncertaintyLevels;
+trlErrors            = trlData.trlErrors;
+trlConfReports       = trlData.trlConfReports;
+trlUncertaintyLevels = trlData.trlUncertaintyLevels;
+trlStimOris          = trlData.trlStimOris;
 
-warning("This is not computed on filtered data. But maybe this is the right approach since this is th ground truth.")
+warning("This is not computed on filtered data. But maybe this is the " + ...
+    "right approach since this is th ground truth.")
 
 y_mad      = trlData.y_mad;
 y_HC_mad   = trlData.y_HC_mad;
@@ -38,7 +40,7 @@ K       = numel( cv_data.resultsListCov ) / nPerm;
 % n       = numel( cv_data.resultsListCov );
 % itr     = numel( cv_data.resultsListCov{n}.f );
 
-% foldIDs = cv_data.foldIDs;
+foldIDs = cv_data.foldIDs;
 
 nllCovModel = []; %zeros(K*nPerm, 1);
 nllIndModel = []; %zeros(K*nPerm, 1);
@@ -56,33 +58,45 @@ paramsCovModel = [];
 paramsIndModel = [];
 
 for h=1:nPerm
-    % foldID = foldIDs{h};
+    foldID = foldIDs{h};
     
     for k = 1:K
         disp(K*(h-1) + k)
 
         % ---- Split trials ----
-        % testIdx  = (foldID == k);
+        testIdx  = (foldID == k);
         
         % TODO: later get it directly from the structure or use it to do
         % sanity check to make sure right data is used.
         
-        err_  = cv_data.cvTrlData{h, k}.testData.trlErrors;
-        conf_ = cv_data.cvTrlData{h, k}.testData.trlConfReports;
-        lvl_  = cv_data.cvTrlData{h, k}.testData.trlUncertaintyLevels;
-        
-        % build binned data for train dataset
-        binnedData = buildBinnedData( ...
-            n_uncertainty_levels, ...
-            errBins, ...
-            err_, conf_, lvl_);
-        
+%         err_  = cv_data.cvTrlData{h, k}.testData.trlErrors;
+%         conf_ = cv_data.cvTrlData{h, k}.testData.trlConfReports;
+%         lvl_  = cv_data.cvTrlData{h, k}.testData.trlUncertaintyLevels;
+%         
+%         % build binned data for train dataset
 %         binnedData = buildBinnedData( ...
 %             n_uncertainty_levels, ...
 %             errBins, ...
-%             trlErrors(testIdx), ...
-%             trlConfReports(testIdx), ...
-%             trlUncertaintyLevels(testIdx));
+%             err_, conf_, lvl_);
+        
+        if fitType == "full"
+            binnedData = buildBinnedData( ...
+                n_uncertainty_levels, ...
+                errBins, ...
+                trlErrors(testIdx), ...
+                trlConfReports(testIdx), ...
+                trlUncertaintyLevels(testIdx), ...
+                trlStimOris(testIdx), ...
+                data.orientations, ...
+                true);
+        else
+            binnedData = buildBinnedData( ...
+                n_uncertainty_levels, ...
+                errBins, ...
+                trlErrors(testIdx), ...
+                trlConfReports(testIdx), ...
+                trlUncertaintyLevels(testIdx));
+        end
         
         % metrics = computeMetricsFromTrlData(trlErrors(testIdx), ...
         %     trlConfReports(testIdx), trlUncertaintyLevels(testIdx));

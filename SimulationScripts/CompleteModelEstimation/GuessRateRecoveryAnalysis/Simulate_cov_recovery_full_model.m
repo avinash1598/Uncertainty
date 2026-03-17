@@ -7,10 +7,11 @@
 clear all
 close all
 
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/LLScriptsUtils/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/LLScriptsUtils/')
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/PlotUtils/')
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Utils/')
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/OptimizationUtils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/LLScriptsTrialData/')
 
 orientations     = 0:15:175; %linspace(0, 180, 18); %0:10:180; % linspace(0, 180, 18);
 ntrials_per_ori  = 25; %250;
@@ -134,7 +135,7 @@ result = Optimize(data, errBins, "ind", [], optParams, 'full');
 res.data = data;
 res.result = result;
 res.errBins = errBins;
-save('cov_data_ind_fit_full_model_fit_method_2_25_trials.dat', 'res');
+% save('cov_data_ind_fit_full_model_fit_method_2_25_trials.dat', 'res');
 
 
 %%

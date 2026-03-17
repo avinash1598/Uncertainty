@@ -1,3 +1,4 @@
+
 restoredefaultpath
 close all
 clear all
@@ -6,14 +7,19 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR31.mat'); % Tien
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR33.mat'); % Akash
-data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB01.mat');   % Yichao
+% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB01.mat'); % Yichao
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB02.mat');   % Jonathan
+data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB03.mat'); % David
 
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/Data/COR32.mat'); % Jiaming
 
 % formattedData = formatExpData(data);
-fltData = data.dat( data.dat.session < 4 , :); %data.dat;
+% fltData = data.dat( data.dat.session > 2, :); %data.dat;
+% fltData = data.dat( data.dat.session > 2, :); %data.dat;
+fltData = data.dat( data.dat.session > 1, :);
+% fltData = fltData(fltData.stimSpread == 10, :);
 f.dat = fltData; %data.dat; %fltData;
+% formattedData = formatExpData_SM(f, false, true); % wrt sample mean
 formattedData = formatExpData(f, false, true);
 rvOriErr = -90:3:90;
 
@@ -337,7 +343,7 @@ hold off
 figure
 for i=1:n_uncertainty_levels
     
-    subplot(2, n_uncertainty_levels/2, i)
+    subplot(2, ceil( n_uncertainty_levels/2 ), i)
     hold on
     
     grpOriErr    = resp_err_by_level(i, :);
@@ -358,7 +364,7 @@ confLabels = ["LC", "HC"];
 for confVal = [0, 1]
     for i=1:n_uncertainty_levels
         
-        subplot(2, n_uncertainty_levels/2, i)
+        subplot(2, ceil( n_uncertainty_levels/2 ), i)
         hold on
 
         grpOriErr    = resp_err_by_level(i, :);
@@ -583,7 +589,8 @@ plot(1:numel(x), y, LineWidth=1.5);
 xticks(1:numel(x))
 xticklabels(x);
 xlabel("Orientation")
-ylabel("std(raw error)")
+ylabel("MAD(raw error)")
+% ylabel("std(raw error)")
 
 tabData = groupsummary(cardinalData, {'cardinalStimOri', 'reportedConf'}, {'mean', 'std',  @(x) mad(x,1), 'numel'}, 'rawOriError');
 x_HC = tabData.cardinalStimOri(tabData.reportedConf == 1);
@@ -609,7 +616,8 @@ plot(1:numel(x_LC), y_LC, LineWidth=1.5, DisplayName="LC");
 xticks(1:numel(x_HC))
 xticklabels(x_HC);
 xlabel("Orientation")
-ylabel("std(raw error)")
+ylabel("MAD(raw error)")
+% ylabel("std(raw error)")
 legend
 hold off
 
@@ -620,7 +628,7 @@ bar((1:numel(x_LC)) + 0.125, tabData.GroupCount(tabData.reportedConf == 0), 0.25
 xlabel("Orientation")
 ylabel("Trial count")
 xticks(1:numel(x_HC))
-xticklabels(x_HC);
+xticklabels(unique(tabData.cardinalStimOri));
 legend
 hold off
 

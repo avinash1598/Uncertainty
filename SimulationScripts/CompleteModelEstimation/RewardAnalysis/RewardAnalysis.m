@@ -7,7 +7,8 @@ addpath('LL_scripts/')
 
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/data/COR15.mat'); % Changed reward function - affects perceptual variance - more relaxed
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/data/COR31.mat'); % Changed reward function - affects perceptual variance - more relaxed
-data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/Data/COR33.mat');
+% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/Data/COR33.mat');
+data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB03.mat'); % David
 
 % data = load('../Data/COR16.mat'); % orientation dependent reward
 % data = load('../Data/COR17.mat'); % ori dependent reward - changed reward function c1 = 5
@@ -390,7 +391,7 @@ function reward = calcReward(trueOri, reportedOri, confReport)
 
 % Note: reported orientation is already pi-periodic, true orientation as
 % well
-maxTolerableError = 30; %30; % In degrees
+maxTolerableError = 25; %30; %30; % In degrees
 % absPerceptualError = abs(trueOri - reportedOri);
 % absPerceptualError = min(absPerceptualError, 180 - absPerceptualError);
 rawError = reportedOri - trueOri;
@@ -401,8 +402,8 @@ reward = zeros(size(absPerceptualError));
 
 % y1 = 12 + (14 - 12)*abs(sind(2*trueOri)); % 12;
 % x1 = 11 + (13 - 11)*abs(sind(2*trueOri)); % ideally 9 but its okay
-y1 = 18; %18; %15; % 12;
-x1 = 16; %16.1; %14; % ideally 9 but its okay
+y1 = 13; %18; %18; %15; % 12;
+x1 = 11; %16; %16.1; %14; % ideally 9 but its okay
 c1 = 0.15; %0.5; %0.2
 m1 = - c1./y1;
 m2 =  ( m1.*x1 + c1 ) ./ (x1 - maxTolerableError); % c2 / maxTolerableError; %m1 - (c1 - c2)/x1;

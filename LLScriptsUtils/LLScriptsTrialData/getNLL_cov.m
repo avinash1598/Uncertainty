@@ -1,13 +1,9 @@
-function [retData] = getEstimationsPDF_cov(stimVals, rvOriErrs, modelParams, optimizationFlag)
-
-error("deprecated")
+function [retData] = getNLL_cov(stimVals, modelParams)
 
 % warning("Deprecated")
 if nargin < 4
     optimizationFlag = false;   % default value
 end
-
-% rvOriErrs = -90:3:90; %TODO
 
 stimOris                  = stimVals;
 b                         = modelParams.b;       % Baseline stimulus dependent sensory noise level
@@ -74,24 +70,9 @@ est_mad_m_stim = zeros(numOris, 1);
 est_mad_m_stim_HC = zeros(numOris, 1);
 est_mad_m_stim_LC = zeros(numOris, 1);
 
-% [pdf_s, pdfHC_s, pdfLC_s, sigma_s, sigmaHC_s, sigmaLC_s, mad_m_s, mad_m_HC_s, mad_m_LC_s] = getGaussianMixturePDF( ...
-%     rvOriErrs, sigma_m_stim, bias, pHC_all, pLC_all, guessRate, optimizationFlag);
-% 
-% analyticalPDF_stim(:)    = pdf_s;
-% analyticalPDF_stim_HC(:) = pdfHC_s;
-% analyticalPDF_stim_LC(:) = pdfLC_s;
-% 
-% est_sigma_m_stim(:)    = sigma_s;
-% est_sigma_m_stim_HC(:) = sigmaHC_s;
-% est_sigma_m_stim_LC(:) = sigmaLC_s;
-% 
-% est_mad_m_stim(:)    = mad_m_s;
-% est_mad_m_stim_HC(:) = mad_m_HC_s;
-% est_mad_m_stim_LC(:) = mad_m_LC_s;
-
 for i = 1:numOris
-    [pdf, pdfHC, pdfLC, sigma_, sigmaHC, sigmaLC, mad_m, mad_m_HC, mad_m_LC] = getGaussianMixturePDF(rvOriErrs, ...
-        sigma_m_stim(i, :), bias(i), pHC_all(i, :), pLC_all(i, :), guessRate, optimizationFlag);
+    [pdf, pdfHC, pdfLC] = getGaussianMixturePDF(rvOriErrs, ...
+        sigma_m_stim(i, :), bias(i), pHC_all(i, :), pLC_all(i, :), guessRate);
     
     analyticalPDF_stim(i, :)    = pdf;
     analyticalPDF_stim_HC(i, :) = pdfHC;
@@ -108,14 +89,14 @@ end
 
 % Compute PDF for all orientation
 analyticalPDF = mean(analyticalPDF_stim, 1);
-% analyticalPDF = analyticalPDF / trapz(rvOriErrs, analyticalPDF);
+analyticalPDF = analyticalPDF / trapz(rvOriErrs, analyticalPDF);
 
 % PDF for HC and LC
 analyticalPDF_HC = mean(analyticalPDF_stim_HC, 1);
-% analyticalPDF_HC = analyticalPDF_HC / trapz(rvOriErrs, analyticalPDF_HC);
+analyticalPDF_HC = analyticalPDF_HC / trapz(rvOriErrs, analyticalPDF_HC);
 
 analyticalPDF_LC = mean(analyticalPDF_stim_LC, 1);
-% analyticalPDF_LC = analyticalPDF_LC / trapz(rvOriErrs, analyticalPDF_LC);
+analyticalPDF_LC = analyticalPDF_LC / trapz(rvOriErrs, analyticalPDF_LC);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 % Return data
@@ -184,151 +165,37 @@ end
 
 
 % PDF for individual orientations
-function [pdf, pdfHC, pdfLC, sigma, sigmaHC, sigmaLC, mad_m, mad_m_HC, mad_m_LC] = getGaussianMixturePDF( ...
-    x, sigma_m_stim, bias, pHC, pLC, guessRate, optimizationFlag)
+function [pdf, pdfHC, pdfLC] = getGaussianMixturePDF( ...
+    x, sigma_m_stim, bias, pHC, pLC, guessRate)
 % x = array of perceptual errors
-
-% x = -360:3:360; % TODO:
 
 pdf_random_guesses = ones(size(x)) / (numel(x) + 1);
 pdf_random_guesses = pdf_random_guesses./trapz(x, pdf_random_guesses); 
 pdf_random_guesses = pdf_random_guesses';
-% pdf_random_guesses = 1/180;
 
-% If probability lands outside [-90,90] i.e. period 180, move it back inside by wrapping.
-period = 180;
-K = 4;
-pdf   = zeros(length(x),1);
-pdfHC = zeros(length(x),1);
-pdfLC = zeros(length(x),1);
-
-% Normalize such that sum is 1
-% This is done to avoid using trapz
-% pHC = pHC ./ sum(pHC); 
-% pLC = pLC ./ sum(pLC);
-
-for k = -K:K
-    Z = x - bias + k*period;
-    p_X = exp(-(Z').^2 ./ (2*sigma_m_stim.^2)) ...
-          ./ sqrt(2*pi*sigma_m_stim.^2);
-    pdf = pdf + sum(p_X,2);
-    
-    % HC
-    p_X_HC = p_X.*pHC;
-    pdfHC  = pdfHC + sum(p_X_HC, 2);
-    
-    % LC
-    p_X_LC = p_X.*pLC;
-    pdfLC  = pdfLC + sum(p_X_LC, 2);
-end
-
-pdf = pdf ./ trapz(x,pdf);
+% I guess using trapz is fine. Error reports lives in that range
+% Note: wrapped distribution is conceptually correct - but if the error is
+% not too large then truncated distribution is fine 
+% (truncated might not be best for the highest uncertainty level)
+Z = x - bias;
+p_X = exp(- (Z').^2 ./ (2*sigma_m_stim.^2 ) ) ./ sqrt(2*pi*sigma_m_stim.^2);
+pdf = sum(p_X, 2);
+pdf = pdf./trapz(x, pdf);
 pdf = (1 - guessRate)*pdf + guessRate*pdf_random_guesses;
+pdf = pdf./trapz(x, pdf);
 
-pdfHC = pdfHC ./ trapz(x,pdfHC);
-
-pdfLC = pdfLC ./ trapz(x,pdfLC);
-pdfLC = (1 - guessRate)*pdfLC + guessRate*pdf_random_guesses;
-
-% keyboard
-
-% % Truncated gaussian - don't use it
-% Z = x - bias; % this can push things outside of -90 to 90 range
-% p_X = exp(- (Z').^2 ./ (2*sigma_m_stim.^2 ) ) ./ sqrt(2*pi*sigma_m_stim.^2);
-% pdf = sum(p_X, 2);
-% pdf = pdf./trapz(x, pdf);
-% pdf = (1 - guessRate)*pdf + guessRate*pdf_random_guesses;
-% pdf = pdf./trapz(x, pdf);
-% 
-% % HC pdf
-% p_X_HC = p_X.*pHC;
-% pdfHC = sum(p_X_HC, 2);
-% pdfHC = pdfHC./trapz(x, pdfHC);
+% HC pdf
+p_X_HC = p_X.*pHC;
+pdfHC = sum(p_X_HC, 2);
+pdfHC = pdfHC./trapz(x, pdfHC);
 % pdfHC = (1 - guessRate)*pdfHC + guessRate*pdf_random_guesses; % (No guess rate for high confidence)
 % pdfHC = pdfHC./trapz(x, pdfHC);
-% 
-% % LC pdf
-% p_X_LC = p_X.*pLC;
-% pdfLC = sum(p_X_LC, 2);
-% pdfLC = pdfLC./trapz(x, pdfLC);
-% pdfLC = (1 - guessRate)*pdfLC + guessRate*pdf_random_guesses; % Guess rate for low confidence
-% pdfLC = pdfLC./trapz(x, pdfLC);
 
-%% Calculate std dev
-dx = x(2) - x(1); % Assuming uniform
-% warning("Make sure error bins are uniformly spaced")
-% Compute wrt to zero to account for bias
-mu = 0; %sum( x.*pdf'*dx );
-sigma = sqrt( sum( ((x - mu).^2).*pdf'*dx ) );
-
-% For HC
-mu = 0;%sum( x.*pdfHC'*dx );
-sigmaHC = sqrt( sum( ((x - mu).^2).*pdfHC'*dx ) );
-
-% For LC
-mu = 0; %sum( x.*pdfLC'*dx );
-sigmaLC = sqrt( sum( ((x - mu).^2).*pdfLC'*dx ) );
-
-%% MAD from PDF
-% Calculate metric only after optimization is complete
-% Compute wrt to zero (assume zero to be mean and the median)
-if ~optimizationFlag
-    
-    dx = x(2)-x(1);
-    F = cumsum(pdf) * dx;
-    if ~isnan(F(end))
-        F = F / F(end);   % normalize
-        % [Funiq, idx] = unique(F);
-        % xuniq = x(idx);
-        median_val = 0; %interp1(Funiq, xuniq, 0.5);
-        mad_fun = @(d) (interp1(x, F, median_val + d) - interp1(x, F, median_val - d)) - 0.5;
-        
-        d0 = (x(end) - x(1)) / 4; % initial guess for d
-        MAD = fzero(mad_fun, d0);
-        mad_m = MAD;
-    else
-        mad_m = nan;
-    end
-    
-    % HC
-    dx = x(2)-x(1);
-    F = cumsum(pdfHC) * dx;
-    if ~isnan(F(end))
-        F = F / F(end);   % normalize
-        % [Funiq, idx] = unique(F);
-        % xuniq = x(idx);
-        median_val = 0; %interp1(Funiq, xuniq, 0.5);
-        mad_fun = @(d) (interp1(x, F, median_val + d) - interp1(x, F, median_val - d)) - 0.5;
-        
-        d0 = (x(end) - x(1)) / 4; % initial guess for d
-        MAD = fzero(mad_fun, d0);
-        mad_m_HC = MAD;
-    
-    else
-        mad_m_HC = nan; % dummy value to avoid nan error
-    end
-    
-    % LC
-    dx = x(2)-x(1);
-    F = cumsum(pdfLC) * dx;
-    if ~isnan(F(end))
-        F = F / F(end);   % normalize
-        % [Funiq, idx] = unique(F);
-        % xuniq = x(idx);
-        median_val = 0; %interp1(Funiq, xuniq, 0.5); 
-        mad_fun = @(d) (interp1(x, F, median_val + d) - interp1(x, F, median_val - d)) - 0.5;
-        
-        d0 = (x(end) - x(1)) / 4; % initial guess for d
-        MAD = fzero(mad_fun, d0);
-        mad_m_LC = MAD;
-    else
-        mad_m_LC = nan;
-    end
-
-else
-    mad_m = 0;
-    mad_m_HC = 0;
-    mad_m_LC = 0;
-end
+% LC pdf
+p_X_LC = p_X.*pLC;
+pdfLC = sum(p_X_LC, 2);
+pdfLC = pdfLC./trapz(x, pdfLC);
+pdfLC = (1 - guessRate)*pdfLC + guessRate*pdf_random_guesses; % Guess rate for low confidence
+pdfLC = pdfLC./trapz(x, pdfLC);
 
 end
