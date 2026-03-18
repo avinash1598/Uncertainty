@@ -23,8 +23,17 @@ sigma_meta       = 0.6;
 Cc               = 0.5; 
 guessRate        = 0.1; %0.1; % While fitting try keeping it below 0.1 % For each trial with this prob sample uniformly from 0 to 179
 
-% In actual data correct for bias
+b = [14.9007 22.1322 21.0046 27.8742 36.0335 39.5992];
+% b = [6.9007 22.1322 21.0046 27.8742 36.0335 39.5992];
+a = 0.1626.*b;
+biasAmp          = 2.6466; %0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
+scale            = 465.4275; %0.5;
+sigma_meta       = 6.8298;
+Cc               = 0.0371; 
+guessRate        = 0.031;
 
+
+% In actual data correct for bias
 % Preallocate arrays
 n_theta                  = numel(orientations);
 uncertainty_levels       = numel(b);
@@ -98,8 +107,8 @@ resp_err_all_reshaped = reshape(resp_err_all, uncertainty_levels, []);
 confidence_report_all_reshaped = reshape(confidence_report_all, uncertainty_levels, []);
 
 % Save model data
-data.stimOri                = theta_true_all;
-data.reportedOri            = theta_resp_all;
+data.theta_true_all         = theta_true_all;
+data.theta_resp_all         = theta_resp_all;
 data.resp_err_all           = resp_err_all;
 data.confidence_report_all  = confidence_report_all;
 data.stdByOri               = squeeze( std(resp_err_all, 0, 3) );
@@ -121,15 +130,15 @@ data.params.guessRate             = guessRate;
 % save('modelContOriData_cov.mat', "data")
 
 %% Optimize
-errBins = -90:0.5:90;
+errBins = -90:2:90;
 
-optParams.nStarts = 30;
+optParams.nStarts = 1;
 optParams.hyperParamC1 = 0;
 optParams.hyperParamC2 = 0;
 optParams.randomGuessModel = true;
 
-%result = Optimize(data, errBins, "cov", [], optParams, 'full');
-result = Optimize(data, errBins, "ind", [], optParams, 'full');
+result = Optimize(data, "cov", [], optParams, 'full');
+% result = Optimize(data, errBins, "ind", [], optParams, 'full');
 
 %%
 res.data = data;
@@ -180,15 +189,6 @@ anlytcl_mad_m_stim_LC = zeros(1, uncertainty_levels);
 for i=1:uncertainty_levels
     rvOriErr = errBins;
     
-%     modelParams.b                   = opt_param_sigma_s(i);
-%     modelParams.a                   = gt_sigma_ori_scale*opt_param_sigma_s(i);
-%     modelParams.sigma_s             = data.params.sigma_s_reduced_model(i);
-%     modelParams.biasAmp             = biasAmp;
-%     modelParams.scale               = scale;
-%     modelParams.Cc                  = Cc;
-%     modelParams.sigma_meta          = sigma_meta;
-%     modelParams.guessRate           = guessRate;
-    
     modelParams.b                   = opt_param_sigma_s(i);
     modelParams.a                   = gt_sigma_ori_scale*opt_param_sigma_s(i);
     modelParams.sigma_s             = opt_param_sigma_s(i);
@@ -198,13 +198,7 @@ for i=1:uncertainty_levels
     modelParams.sigma_meta          = opt_param_sigma_meta;
     modelParams.guessRate           = opt_param_guessrate;
     
-%     modelParams.sigma_s             = opt_param_sigma_s(i);
-%     modelParams.scale               = opt_param_scale;
-%     modelParams.Cc                  = opt_param_Cc;
-%     modelParams.sigma_meta          = opt_param_sigma_meta;
-%     modelParams.guessRate           = opt_param_guessrate;
-    
-    retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams);
+    retData = getEstimationsPDF_cov(orientations, modelParams, false);
 %     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
     
     anlytcl_sigma_m_stim(i)    = retData.E_sigma_m;
@@ -234,7 +228,7 @@ for i=1:n_uncertainty_levels
     modelParams.sigma_meta          = opt_param_sigma_meta;
     modelParams.guessRate           = opt_param_guessrate;
     
-    retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams);
+    retData = getEstimationsPDF_cov(orientations, modelParams, false);
 %     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
     
     subplot(2, n_uncertainty_levels/2, i)
@@ -242,7 +236,7 @@ for i=1:n_uncertainty_levels
     
     grpOriErr = resp_err_all_reshaped(i, :);
     histogram(grpOriErr, rvOriErr, Normalization="pdf");
-    plot(rvOriErr, retData.analyticalPDF, LineWidth=1.5);
+    plot(retData.rvOriErrs, retData.analyticalPDF, LineWidth=1.5);
     
     xlabel("Orientation (deg)")
     ylabel("count")

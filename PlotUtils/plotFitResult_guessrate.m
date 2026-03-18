@@ -99,7 +99,7 @@ for i=1:n_uncertainty_levels
         mP.shape = param_shape;
 
         if fullModel
-            analyticalSol = getEstimatesPDFs(orientations, errBins, mP, false);
+            analyticalSol = getEstimatesPDFs(orientations, mP, false);
         else
             analyticalSol = getEstimatesPDFs_reduced_model(errBins, mP, false);
         end
@@ -107,7 +107,7 @@ for i=1:n_uncertainty_levels
     elseif modelType == "cov"
 
         if fullModel
-            analyticalSol = getEstimationsPDF_cov(orientations, errBins, mP, false);
+            analyticalSol = getEstimationsPDF_cov(orientations, mP, false);
         else
             analyticalSol = getEstimationsPDF_cov_reduced(errBins, mP, false);
         end
@@ -149,7 +149,7 @@ for i=1:n_uncertainty_levels
     % y = pdf_stim_LC(idx, :);
     % scatter(errBins, y(:), 'filled', DisplayName="LC");
     histogram(dataLC, errBins, Normalization="pdf");
-    plot(errBins, analyticalSols{idx}.analyticalPDF_LC, DisplayName="fit", LineWidth=1.5);
+    plot(analyticalSols{idx}.rvOriErrs, analyticalSols{idx}.analyticalPDF_LC, DisplayName="fit", LineWidth=1.5);
     hold off
 
     %xline(0, LineStyle="--"); Probalamatic line
@@ -168,7 +168,7 @@ for i=1:n_uncertainty_levels
     % y = pdf_stim_HC(idx, :);
     % scatter(errBins, y(:), 'filled', DisplayName="HC");
     histogram(dataHC, errBins, Normalization="pdf");
-    plot(errBins, analyticalSols{idx}.analyticalPDF_HC, DisplayName="fit", LineWidth=1.5);
+    plot(analyticalSols{idx}.rvOriErrs, analyticalSols{idx}.analyticalPDF_HC, DisplayName="fit", LineWidth=1.5);
     
     hold off
     
@@ -194,7 +194,7 @@ for i=1:n_uncertainty_levels
     % y = pdf_stim_HC(idx, :);
     % scatter(errBins, y(:), 'filled', DisplayName="HC");
     histogram(errData, errBins, Normalization="pdf");
-    plot(errBins, analyticalSols{idx}.analyticalPDF, DisplayName="fit", LineWidth=1.5);
+    plot(analyticalSols{idx}.rvOriErrs, analyticalSols{idx}.analyticalPDF, DisplayName="fit", LineWidth=1.5);
     
     hold off
     

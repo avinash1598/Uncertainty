@@ -38,6 +38,8 @@ trial_probs_HC = zeros(size(trlErrors));   % conditional prob of error given con
 trial_probs_LC = zeros(size(trlErrors));   % conditional prob of error given conf report - LC
 trial_probs_Conf = zeros(size(trlErrors)); % Probability of a trial being high or low confidence
 
+tic
+
 for i=1:nLevels
     modelParams.sigma_s             = param_sigma_s(i);
     modelParams.scale               = param_scale;
@@ -89,14 +91,14 @@ end
 
 % NLL loss
 
-ll_HC = log( trial_probs_HC .* trial_probs_Conf + eps); % P(ERR/HC)*P(HC) or P(ERR/LC)*P(LC)
+ll_HC = log( trial_probs_HC .* trial_probs_Conf + eps);
 ll_LC = log( trial_probs_LC .* trial_probs_Conf + eps);
 ll    = log( trial_probs + eps ); 
 
 nll = ( ll + ll_HC + ll_LC);
-% nll = - sum(nll(:), 'omitnan'); % omitnan or not?? Probably not. It
-% messes up with optimization
 nll = - sum(nll(:));
+
+keyboard
 
 % ll_HC = binned_err_HC .* log( currPdfFit_HC.*curr_pHC + eps );
 % ll_LC = binned_err_LC .* log( currPdfFit_LC.*curr_pLC + eps );

@@ -1,4 +1,4 @@
-function result = Optimize(data, modelType, fltTrlIdx, optParams, fitType)
+function result = Optimize(data, errBins, modelType, fltTrlIdx, optParams, fitType)
     
     assert(modelType == "cov" || modelType == "ind")
 
@@ -8,7 +8,7 @@ function result = Optimize(data, modelType, fltTrlIdx, optParams, fitType)
         fitType = "reduced";
     end
     
-    if nargin < 4 || isempty(optParams)
+    if nargin < 5 || isempty(optParams)
         nStarts          = 20;
         hyperParamC1     = 10; % Hyperparameter for data metrics
         hyperParamC2     = 10; % Hyperparameter for oblique effect
@@ -30,13 +30,13 @@ function result = Optimize(data, modelType, fltTrlIdx, optParams, fitType)
     trlUncertaintyLevels = trlData.trlUncertaintyLevels;
     trlStimOris          = trlData.trlStimOris;
     
-    %warning("This is not computed on filtered data. But maybe this is the right approach since this is th ground truth.")
+    warning("This is not computed on filtered data. But maybe this is the right approach since this is th ground truth.")
     
-    %y_mad      = trlData.y_mad;
-    %y_HC_mad   = trlData.y_HC_mad;
-    %y_LC_mad   = trlData.y_LC_mad;
+    y_mad      = trlData.y_mad;
+    y_HC_mad   = trlData.y_HC_mad;
+    y_LC_mad   = trlData.y_LC_mad;
     
-    if nargin > 2 && ~isempty(fltTrlIdx)
+    if nargin > 3 && ~isempty(fltTrlIdx)
         trlErrors            = trlErrors(fltTrlIdx);
         trlConfReports       = trlConfReports(fltTrlIdx);
         trlUncertaintyLevels = trlUncertaintyLevels(fltTrlIdx);
@@ -47,49 +47,44 @@ function result = Optimize(data, modelType, fltTrlIdx, optParams, fitType)
     % metrics = computeMetricsFromTrlData(trlErrors, ...
     %     trlConfReports, trlUncertaintyLevels);
     
-%     if fitType == "full"
-%         binnedData = buildBinnedData( ...
-%             n_uncertainty_levels, ...
-%             errBins, ...
-%             trlErrors, ...
-%             trlConfReports, ...
-%             trlUncertaintyLevels, ...
-%             trlStimOris, ...
-%             data.orientations, ...
-%             true);
-%     else
-%         binnedData = buildBinnedData( ...
-%             n_uncertainty_levels, ...
-%             errBins, ...
-%             trlErrors, ...
-%             trlConfReports, ...
-%             trlUncertaintyLevels, ...
-%             trlStimOris, ...
-%             data.orientations, ...
-%             false);
-%     end
+    if fitType == "full"
+        binnedData = buildBinnedData( ...
+            n_uncertainty_levels, ...
+            errBins, ...
+            trlErrors, ...
+            trlConfReports, ...
+            trlUncertaintyLevels, ...
+            trlStimOris, ...
+            data.orientations, ...
+            true);
+    else
+        binnedData = buildBinnedData( ...
+            n_uncertainty_levels, ...
+            errBins, ...
+            trlErrors, ...
+            trlConfReports, ...
+            trlUncertaintyLevels, ...
+            trlStimOris, ...
+            data.orientations, ...
+            false);
+    end
     
-    metaData.n_levels             = n_uncertainty_levels;
-    % metaData.errBins              = errBins;
-    metaData.orientations         = data.orientations';
-    metaData.trlErrors            = trlErrors;
-    metaData.trlConfReports       = trlConfReports;
-    metaData.trlUncertaintyLevels = trlUncertaintyLevels;
-    metaData.trlStimOris          = trlStimOris;
-    
-    % metaData.binned_err_HC = binnedData.binned_err_HC;
-    % metaData.binned_err_LC = binnedData.binned_err_LC;
-    % metaData.targetMADs    = y_mad;
-    % metaData.targetMADs_HC = y_HC_mad;
-    % metaData.targetMADS_LC = y_LC_mad;
+    metaData.n_levels      = n_uncertainty_levels;
+    metaData.errBins       = errBins;
+    metaData.binned_err_HC = binnedData.binned_err_HC;
+    metaData.binned_err_LC = binnedData.binned_err_LC;
+    metaData.targetMADs    = y_mad;
+    metaData.targetMADs_HC = y_HC_mad;
+    metaData.targetMADS_LC = y_LC_mad;
     % metaData.targetMADs    = metrics.mads;
     % metaData.targetMADs_HC = metrics.mads_HC;
     % metaData.targetMADS_LC = metrics.mads_LC;
-    % metaData.hyperParamC1      = hyperParamC1;
-    % metaData.hyperParamC2      = hyperParamC2;
-    % metaData.randomGuessModel  = randomGuessModel;
-    % metaData.stdByOri          = data.stdByOri;
-    % metaData.madByOri          = data.madByOri;
+    metaData.hyperParamC1      = hyperParamC1;
+    metaData.hyperParamC2      = hyperParamC2;
+    metaData.randomGuessModel  = randomGuessModel;
+    metaData.stdByOri          = data.stdByOri;
+    metaData.madByOri          = data.madByOri;
+    metaData.orientations      = data.orientations';
     
     % Run multi-start optimization for cov model
     if fitType == "full"
@@ -220,7 +215,6 @@ x_all = zeros(nStarts,nParams);
 f_all = zeros(nStarts,1);
 
 parfor itr = 1:nStarts
-% for itr = 1:nStarts
 
     fprintf( 'optimization itr: %d \n', itr) 
     success = false;
