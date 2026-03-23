@@ -110,12 +110,20 @@ resp_err_all_reshaped = reshape(resp_err_all, uncertainty_levels, []);
 confidence_report_all_reshaped = reshape(confidence_report_all, uncertainty_levels, []);
 
 % Save model data
-data.stimOri                = theta_true_all;
-data.reportedOri            = theta_resp_all;
+data.theta_true_all         = theta_true_all;
+data.theta_resp_all         = theta_resp_all;
 data.resp_err_all           = resp_err_all;
 data.confidence_report_all  = confidence_report_all;
-% data.err         = resp_err_all;
-% data.confReport  = confidence_report_all;
+data.stdByOri               = squeeze( std(resp_err_all, 0, 3) );
+data.madByOri               = squeeze( mad(resp_err_all, 1, 3) );
+data.orientations           = orientations';
+
+T = table( ...
+    data.theta_true_all(:), ...
+    data.resp_err_all(:), ...
+    'VariableNames', {'theta_true', 'resp_err'});
+G = groupsummary(T, {'theta_true'}, {'mean'}, 'resp_err');
+data.bias = G.mean_resp_err;
 
 data.params.sigma_s_reduced_model = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 )';
 data.params.b                     = b;
@@ -127,6 +135,7 @@ data.params.Cc                    = Cc;
 data.params.guessRate             = guessRate;
 
 % save('modelContOriData_cov.mat', "data")
+initCond = getInitialConditions(data);
 
 %% Optimize
 errBins = -90:0.1:90;
@@ -135,20 +144,20 @@ optParams.nStarts = 1;
 optParams.hyperParamC1 = 100;
 optParams.randomGuessModel = true;
 
-result = Optimize(data, errBins, "ind", [], optParams, 'reduced');
+result = Optimize(data, initCond, "cov", [], optParams, 'reduced');
 
 %%
 [~, idx] = min(result.f);
 
 opt_param_sigma_s        = result.x(idx, 1:n_uncertainty_levels);
-opt_param_shape          = result.x(idx ,n_uncertainty_levels + 1);
-opt_param_scale          = result.x(idx, n_uncertainty_levels + 2);
-opt_param_sigma_meta     = result.x(idx, n_uncertainty_levels + 3);
-opt_param_Cc             = result.x(idx, n_uncertainty_levels + 4);
-opt_param_guessrate      = result.x(idx, n_uncertainty_levels + 5);
+% opt_param_shape          = result.x(idx ,n_uncertainty_levels + 1);
+opt_param_scale          = result.x(idx, n_uncertainty_levels + 2-1);
+opt_param_sigma_meta     = result.x(idx, n_uncertainty_levels + 3-1);
+opt_param_Cc             = result.x(idx, n_uncertainty_levels + 4-1);
+opt_param_guessrate      = result.x(idx, n_uncertainty_levels + 5-1);
 
 gt_sigma_s    = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 );
-gt_shape      = shape;
+% gt_shape      = shape;
 gt_scale      = scale;
 gt_sigma_meta = sigma_meta;
 gt_Cc         = Cc;
@@ -159,7 +168,7 @@ for i =1:n_uncertainty_levels
     fprintf("GT: %.4f, Fit: %.4f \n", gt_sigma_s(i), opt_param_sigma_s(i))
 end
 
-fprintf("GT: %.4f, Fit: %.4f \n", gt_shape, opt_param_shape)
+% fprintf("GT: %.4f, Fit: %.4f \n", gt_shape, opt_param_shape)
 fprintf("GT: %.4f, Fit: %.4f \n", gt_scale, opt_param_scale)
 fprintf("GT: %.4f, Fit: %.4f \n", gt_sigma_meta, opt_param_sigma_meta)
 fprintf("GT: %.4f, Fit: %.4f \n", gt_Cc, opt_param_Cc)
@@ -184,14 +193,14 @@ for i=1:uncertainty_levels
 %     modelParams.guessRate           = guessRate;
 
     modelParams.sigma_s             = opt_param_sigma_s(i);
-    modelParams.shape               = opt_param_shape;
+    %modelParams.shape               = opt_param_shape;
     modelParams.scale               = opt_param_scale;
     modelParams.Cc                  = opt_param_Cc;
     modelParams.sigma_meta          = opt_param_sigma_meta;
     modelParams.guessRate           = opt_param_guessrate;
     
 %     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
-    retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
+    retData = getPDFs_cov_reduced(modelParams);
     
     anlytcl_sigma_m_stim(i)    = retData.E_sigma_m;
     anlytcl_sigma_m_stim_HC(i) = retData.E_sigma_m_HC;
@@ -219,21 +228,21 @@ for i=1:n_uncertainty_levels
 %     modelParams.guessRate           = guessRate;
     
     modelParams.sigma_s             = opt_param_sigma_s(i);
-    modelParams.shape               = opt_param_shape;
+    %modelParams.shape               = opt_param_shape;
     modelParams.scale               = opt_param_scale;
     modelParams.Cc                  = opt_param_Cc;
     modelParams.sigma_meta          = opt_param_sigma_meta;
     modelParams.guessRate           = opt_param_guessrate;
     
 %     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
-    retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
+    retData = getPDFs_cov_reduced(modelParams);
     
     subplot(2, n_uncertainty_levels/2, i)
     hold on
     
     grpOriErr = resp_err_all_reshaped(i, :);
     histogram(grpOriErr, rvOriErr, Normalization="pdf");
-    plot(rvOriErr, retData.analyticalPDF, LineWidth=1.5);
+    plot(retData.rvOriErrs, retData.analyticalPDF, LineWidth=1.5);
     
     xlabel("Orientation (deg)")
     ylabel("count")

@@ -1,4 +1,4 @@
-function result = Optimize(data, errBins, modelType, fltTrlIdx, optParams, fitType)
+function result = Optimize(data, initCond, modelType, fltTrlIdx, optParams, fitType)
     
     assert(modelType == "cov" || modelType == "ind")
 
@@ -30,11 +30,11 @@ function result = Optimize(data, errBins, modelType, fltTrlIdx, optParams, fitTy
     trlUncertaintyLevels = trlData.trlUncertaintyLevels;
     trlStimOris          = trlData.trlStimOris;
     
-    warning("This is not computed on filtered data. But maybe this is the right approach since this is th ground truth.")
+    %warning("This is not computed on filtered data. But maybe this is the right approach since this is th ground truth.")
     
-    y_mad      = trlData.y_mad;
-    y_HC_mad   = trlData.y_HC_mad;
-    y_LC_mad   = trlData.y_LC_mad;
+    %y_mad      = trlData.y_mad;
+    %y_HC_mad   = trlData.y_HC_mad;
+    %y_LC_mad   = trlData.y_LC_mad;
     
     if nargin > 3 && ~isempty(fltTrlIdx)
         trlErrors            = trlErrors(fltTrlIdx);
@@ -69,15 +69,20 @@ function result = Optimize(data, errBins, modelType, fltTrlIdx, optParams, fitTy
 %             false);
 %     end
     
-    metaData.n_levels      = n_uncertainty_levels;
-    metaData.errBins       = errBins;
-    metaData.orientations  = data.orientations';
-    metaData.trlErrors     = 
-    trlErrors            = metaData.trlErrors;
-trlConfReports       = metaData.trlErrors;
-trlUncertaintyLevels = metaData.trlUncertaintyLevels;
-trlStimOris          = metaData.trlStimOris;
-
+    metaData.n_levels             = n_uncertainty_levels;
+    % metaData.errBins              = errBins;
+    metaData.orientations         = data.orientations';
+    metaData.trlErrors            = trlErrors;
+    metaData.trlConfReports       = trlConfReports;
+    metaData.trlUncertaintyLevels = trlUncertaintyLevels;
+    metaData.trlStimOris          = trlStimOris;
+    metaData.sigma_m_shape1       = initCond.sigma_m_shape1; % 1
+    metaData.sigma_m_shape2       = initCond.sigma_m_shape2; % 90
+    metaData.biasShape            = initCond.biasShape;      % 2
+    metaData.a                    = initCond.a;
+    metaData.biasAmp              = initCond.biasAmp;
+    
+    
     % metaData.binned_err_HC = binnedData.binned_err_HC;
     % metaData.binned_err_LC = binnedData.binned_err_LC;
     % metaData.targetMADs    = y_mad;
@@ -94,7 +99,7 @@ trlStimOris          = metaData.trlStimOris;
     
     % Run multi-start optimization for cov model
     if fitType == "full"
-        result = multiStartFitFull(grpOriErr, n_uncertainty_levels, metaData, modelType, nStarts);
+        result = multiStartFitFull(n_uncertainty_levels, metaData, modelType, nStarts, initCond);
     else
         result = multiStartFit(grpOriErr, n_uncertainty_levels, metaData, modelType, nStarts);
     end
@@ -198,78 +203,113 @@ results.f = f_all;
 end
 
 
-function results = multiStartFitFull(grpOriErr, n_uncertainty_levels, metaData, model, nStarts)
+function results = multiStartFitFull(n_uncertainty_levels, metaData, model, nStarts, initCond)
 % model: cov, ind
 
 % nStarts = 20;
 
 if model == "cov"
-    nParams = n_uncertainty_levels + 4 + 2;
+    nParams = 2*n_uncertainty_levels + 4 + 1;
+    %nParams = n_uncertainty_levels + 5 + 1;
 elseif model == "ind"
-    nParams = n_uncertainty_levels + 5 + 2;
+    nParams = 2*n_uncertainty_levels + 5 + 1;
+    %nParams = n_uncertainty_levels + 6 + 1;
 else
     nParams = nan;
 end
 
 % Start pool only if none exists
-% p = gcp('nocreate');   
-% if isempty(p)
-%     parpool;           
-% end
+p = gcp('nocreate');   
+if isempty(p)
+    parpool;           
+end
 
 x_all = zeros(nStarts,nParams);
 f_all = zeros(nStarts,1);
 
-% parfor itr = 1:nStarts
-for itr = 1:nStarts
+% Initial conditions
+b       = initCond.b;
+a       = initCond.a;
+biasAmp = initCond.biasAmp;
+
+parfor itr = 1:nStarts
+% for itr = 1:nStarts
 
     fprintf( 'optimization itr: %d \n', itr) 
     success = false;
     
     while ~success
+        param_sigma_s         = b; %rand(1, n_uncertainty_levels); %b;  % Choose b such that average noise level ranges from low to high (relative to internal noise level)
+        param_scale           = rand;
+        param_sigma_meta      = rand;
+        param_Cc              = rand;
+        param_guessrate       = 0.1*rand;
+        param_a               = a;
+        %param_ori_scale       = rand; %a;
+        param_bias            = biasAmp;
+            
+        if model == "cov"
+            % params = [param_sigma_s param_scale param_sigma_meta param_Cc];
+            params = [param_sigma_s ...
+                param_scale ...
+                param_sigma_meta ...
+                param_Cc ...
+                param_guessrate ...
+                param_a, ...
+                param_bias];
+%             params = [param_sigma_s ...
+%                 param_scale ...
+%                 param_sigma_meta ...
+%                 param_Cc ...
+%                 param_guessrate ...
+%                 param_ori_scale, ...
+%                 param_bias];
+            objFun = @(x) computeNLLCov(x, metaData, 'full'); % Objective function
+        
+        elseif model == "ind"
+            
+            param_shape = rand;
+            % params      = [param_sigma_s param_shape param_scale param_sigma_meta param_Cc];
+            params = [param_sigma_s ...
+                param_shape ...
+                param_scale ...
+                param_sigma_meta ...
+                param_Cc ...
+                param_guessrate ...
+                param_a, ...
+                param_bias];
+%             params = [param_sigma_s ...
+%                 param_shape ...
+%                 param_scale ...
+%                 param_sigma_meta ...
+%                 param_Cc ...
+%                 param_guessrate ...
+%                 param_ori_scale, ...
+%                 param_bias];
+            objFun = @(x) computeNLL(x, metaData, 'full'); % Objective function
+        end
+        
+        % Bounds (ga requires finite bounds!)
+        lb = zeros(size(params));     % same as before
+        ub = inf( 1, numel(params) ); % example finite upper bounds
+        ub(end - n_uncertainty_levels - 1) = 1; % 0.1 (don't have any) Upper bound for last parameter i.e. guessrate
+        %ub(end - 2) = 1;
+        
+        warning('off','all')
+        
+        options = optimoptions('fmincon', ...
+            'Display', 'iter', ...
+            'Algorithm', 'sqp', ...          
+            'MaxIterations', 1000, ...
+            'MaxFunctionEvaluations', 20000, ...
+            'OutputFcn', @stopAfterOneHour);
+        
+        x0 = params;   % Initial guess (required for fmincon)
+        
         try 
-            
-            param_sigma_s         = std(grpOriErr, [], 2)';  % Choose b such that average noise level ranges from low to high (relative to internal noise level)
-            param_scale           = rand;
-            param_sigma_meta      = rand;
-            param_Cc              = rand;
-            param_guessrate       = 0.1*rand;
-            param_sigma_ori_scale = rand;
-            param_bias            = rand;
-                
-            if model == "cov"
-                % params = [param_sigma_s param_scale param_sigma_meta param_Cc];
-                params = [param_sigma_s param_scale param_sigma_meta param_Cc param_guessrate param_sigma_ori_scale param_bias];
-                objFun = @(x) computeNLLCov(x, metaData, 'full'); % Objective function
-            
-            elseif model == "ind"
-            
-                param_shape = rand;
-                % params      = [param_sigma_s param_shape param_scale param_sigma_meta param_Cc];
-                params = [param_sigma_s param_shape param_scale param_sigma_meta param_Cc param_guessrate param_sigma_ori_scale param_bias];
-                objFun = @(x) computeNLL(x, metaData, 'full'); % Objective function
-            end
-            
-            % Bounds (ga requires finite bounds!)
-            lb = zeros(size(params));     % same as before
-            ub = inf( 1, numel(params) ); % example finite upper bounds
-            ub(end - 2) = 1; % 0.1 (don't have any) Upper bound for last parameter i.e. guessrate
-            
-            warning('off','all')
-            
-            options = optimoptions('fmincon', ...
-                'Display', 'iter', ...
-                'Algorithm', 'sqp', ...          
-                'MaxIterations', 1000, ...
-                'MaxFunctionEvaluations', 20000, ...
-                'OutputFcn', @stopAfterOneHour);
-            
-            x0 = params;   % Initial guess (required for fmincon)
-            
+        
             [optimalValues, fval, exitflag, output] = fmincon(objFun, x0, ...
                 [], [], [], [], lb, ub, [], options);
-            
-            warning('on','all')
             
             disp(exitflag)
             disp(output.firstorderopt)
@@ -278,15 +318,23 @@ for itr = 1:nStarts
                 disp("fminconn failed")
                 error('fminconn failed: %s', output.message)
             end
-            
-            x_all(itr, :) = optimalValues;
-            f_all(itr)    = fval;
-    
+
             success = true;
 
         catch ME
             % disp(ME)
         end
+        
+        warning('on','all')
+        
+        if success
+        
+            x_all(itr, :) = optimalValues;
+            f_all(itr)    = fval;
+
+            disp("Itr complete ------------------------")
+        end
+   
     end
 
 end
@@ -297,7 +345,7 @@ results.f = f_all;
 % First verify and then later pick the minimum nll
 end
 
-function stop = stopAfterOneHour(~, optimValues, state)
+function stop = stopAfterOneHour(~, ~, state)
 
 persistent startTime
 stop = false;
@@ -307,9 +355,9 @@ switch state
         startTime = tic;
 
     case 'iter'
-        if toc(startTime) > 3000
+        if toc(startTime) > (3000/2)
             stop = true;
-            fprintf('Stopped: exceeded 1 hour.\n');
+            fprintf('Stopped: exceeded 0.5 hour.\n');
         end
 end
 end

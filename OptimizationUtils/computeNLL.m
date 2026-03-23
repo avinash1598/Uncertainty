@@ -11,40 +11,28 @@ param_sigma_meta      = params(nLevels + 3);
 param_Cc              = params(nLevels + 4);
 param_guessrate       = params(nLevels + 5);
 
-% warning("guess rate set to zero.")
-
 if fitType == "full"
-    param_sigma_ori_scale = params(nLevels + 6);
-    param_bias            = params(nLevels + 7);
+    param_ori_scale = params(nLevels + 6);
+    param_bias      = params(nLevels + 7);
+elseif fitType == "full_jumbo"
+    param_a               = params(nLevels + 6:nLevels + 5 + nLevels);
+    param_bias            = params(2*nLevels + 6);
 end
 
 % Metadata
-errBins        = metaData.errBins;
-binned_err_HC  = metaData.binned_err_HC;
-binned_err_LC  = metaData.binned_err_LC;
-orientations   = metaData.orientations;
-% targetMADs     = metaData.targetMADs;
-% targetMADs_HC  = metaData.targetMADs_HC;
-% targetMADS_LC  = metaData.targetMADS_LC;
-% hyperParamC1   = metaData.hyperParamC1;
-% hyperParamC2   = metaData.hyperParamC2;
-% madByOri       = metaData.madByOri;
+orientations         = metaData.orientations;
+trlErrors            = metaData.trlErrors;
+trlConfReports       = metaData.trlConfReports;
+trlUncertaintyLevels = metaData.trlUncertaintyLevels;
+trlStimOris          = metaData.trlStimOris;
+sigma_m_shape1       = metaData.sigma_m_shape1;
+sigma_m_shape2       = metaData.sigma_m_shape2;
+biasShape            = metaData.biasShape;   
 
-if fitType == "full"
-    currPdfFit_HC     = zeros(nLevels, numel(orientations), numel(errBins));
-    currPdfFit_LC     = zeros(nLevels, numel(orientations), numel(errBins));
-    curr_pHC          = zeros(nLevels, numel(orientations));
-    curr_pLC          = zeros(nLevels, numel(orientations));
-else
-    currPdfFit_HC     = zeros(nLevels, numel(errBins));
-    currPdfFit_LC     = zeros(nLevels, numel(errBins));
-    curr_pHC          = zeros(nLevels, 1);
-    curr_pLC          = zeros(nLevels, 1);
-    curr_mad_m        = zeros(nLevels, 1);
-    curr_mad_m_HC     = zeros(nLevels, 1);
-    curr_mad_m_LC     = zeros(nLevels, 1);
-end
-
+trial_probs      = zeros(size(trlErrors));
+trial_probs_HC   = zeros(size(trlErrors));   % conditional prob of error given conf report - HC
+trial_probs_LC   = zeros(size(trlErrors));   % conditional prob of error given conf report - LC
+trial_probs_Conf = zeros(size(trlErrors)); % Probability of a trial being high or low confidence
 
 for i=1:nLevels
     
@@ -54,54 +42,89 @@ for i=1:nLevels
     modelParams.Cc                  = param_Cc;
     modelParams.sigma_meta          = param_sigma_meta;
     modelParams.guessRate           = param_guessrate;
+    %modelParams.oriErrBinWidth      = 0.1;
     
-    if fitType == "full"
-        modelParams.b             = param_sigma_s(i);
-        modelParams.a             = param_sigma_ori_scale*param_sigma_s(i);
-        modelParams.biasAmp       = param_bias;
-
-        retData = getEstimatesPDFs(orientations, errBins, modelParams, true); % Seems like setting this to false makes things slow
+    if fitType == "full" || fitType == "full_jumbo"
+        if fitType == "full"
+            modelParams.a              = param_ori_scale.*param_sigma_s(i);
+        elseif fitType == "full_jumbo"
+            modelParams.a              = param_a(i); 
+        end
         
-        % curr_mad_m_stim(i, :) = retData.mad_m_by_ori;
-        currPdfFit_HC(i, :, :) = retData.analyticalPDF_stim_HC;
-        currPdfFit_LC(i, :, :) = retData.analyticalPDF_stim_LC;
-        curr_pHC(i, :)         = retData.pHC_stim;
-        curr_pLC(i, :)         = retData.pLC_stim;
-
-    else
-        retData = getEstimatesPDFs_reduced_model(errBins, modelParams, true); % originally set to true
+        modelParams.b              = param_sigma_s(i);
+        modelParams.biasAmp        = param_bias;
+        modelParams.sigma_m_shape1 = sigma_m_shape1;
+        modelParams.sigma_m_shape2 = sigma_m_shape2;
+        modelParams.biasShape      = biasShape;
         
-        % Data for NLL
-        currPdfFit_HC(i, :) = retData.analyticalPDF_HC;
-        currPdfFit_LC(i, :) = retData.analyticalPDF_LC;
-        curr_pHC(i)         = retData.pHC;
-        curr_pLC(i)         = retData.pLC;
-        curr_mad_m(i)       = retData.mad_m;
-        curr_mad_m_HC(i)    = retData.mad_m_HC;
-        curr_mad_m_LC(i)    = retData.mad_m_LC;
+        retData = getPDFs_ind(orientations, modelParams, true); % Seems like setting this to false makes things slow
+        
+        for j = 1:numel(orientations)
+            
+            % PDF
+            idx = (trlUncertaintyLevels == i) & (trlStimOris == orientations(j));
+            trial_probs(idx) = interp1( ...
+                retData.rvOriErrs, ...
+                retData.analyticalPDF_stim(j, :), ...
+                trlErrors(idx), ...
+                'linear');
+
+            % PDF HC
+            idxHC = (trlConfReports == 1) & idx;
+            trial_probs_HC(idxHC) = interp1( ...
+                retData.rvOriErrs, ...
+                retData.analyticalPDF_stim_HC(j, :), ...
+                trlErrors(idxHC), ...
+                'linear');
+            trial_probs_Conf(idxHC) = retData.pHC_stim(j);
+
+            % PDF LC
+            idxLC = (trlConfReports == 0) & idx;
+            trial_probs_LC(idxLC) = interp1( ...
+                retData.rvOriErrs, ...
+                retData.analyticalPDF_stim_LC(j, :), ...
+                trlErrors(idxLC), ...
+                'linear');
+            trial_probs_Conf(idxLC) = retData.pLC_stim(j); % Mutually exclusive from LC
+
+        end
+    elseif fitType == "reduced"
+        retData = getPDFs_ind_reduced(modelParams, true); % originally set to true
+        
+        % PDF
+        idx = (trlUncertaintyLevels == i);
+        trial_probs(idx) = interp1( ...
+            retData.rvOriErrs, ...
+            retData.analyticalPDF(:), ...
+            trlErrors(idx), ...
+            'linear');
+        
+        % PDF HC
+        idxHC = (trlConfReports == 1) & idx;
+        trial_probs_HC(idxHC) = interp1( ...
+            retData.rvOriErrs, ...
+            retData.analyticalPDF_HC(:), ...
+            trlErrors(idxHC), ...
+            'linear');
+        trial_probs_Conf(idxHC) = retData.pHC;
+
+        % PDF LC
+        idxLC = (trlConfReports == 0) & idx;
+        trial_probs_LC(idxLC) = interp1( ...
+            retData.rvOriErrs, ...
+            retData.analyticalPDF_LC(:), ...
+            trlErrors(idxLC), ...
+            'linear');
+        trial_probs_Conf(idxLC) = retData.pLC; % Mutually exclusive from LC
     end
 end
 
-% constraint = sum( ( curr_mad_m - targetMADs ).^2 ) + ...
-%     sum( ( curr_mad_m_HC - targetMADs_HC ).^2 ) + ...
-%     sum( ( curr_mad_m_LC - targetMADS_LC ).^2 );
-% 
-% if fitType == "full"
-%     constraint2 = sum( (curr_mad_m_stim - madByOri).^2, "all" );
-% end
-
-% constraint = 0;
-% constraint2 = 0;
-
 % NLL loss
-ll_HC = binned_err_HC .* log( currPdfFit_HC.*curr_pHC + eps );
-ll_LC = binned_err_LC .* log( currPdfFit_LC.*curr_pLC + eps ); 
-nll = - ( sum(ll_HC(:)) + sum(ll_LC(:)) );
+ll_HC = log( trial_probs_HC .* trial_probs_Conf + eps); % P(ERR/HC)*P(HC) or P(ERR/LC)*P(LC)
+ll_LC = log( trial_probs_LC .* trial_probs_Conf + eps);
+ll    = log( trial_probs + eps ); 
 
-% if fitType == "full"
-%     nll = - ( sum(ll_HC(:)) + sum(ll_LC(:)) ) + hyperParamC1*constraint + hyperParamC2*constraint2;
-% else
-%     nll = - ( sum(ll_HC(:)) + sum(ll_LC(:)) ) + hyperParamC1*constraint;
-% end
+nll = ( ll_HC + ll_LC); %ll + 
+nll = - sum(nll(:));
 
 end

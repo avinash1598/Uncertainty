@@ -9,8 +9,8 @@ close all
 
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Utils')
 
-orientations     = linspace(0, 179, 10); %0:10:180; % 
-ntrials_per_ori  = 25; %1000;
+orientations     = 0:15:175; %linspace(0, 179, 10); %0:10:180; % 
+ntrials_per_ori  = 2500; %1000;
 b                = linspace(0.01, 1.5, 6); % 1.2 % Choose b such that average noise level ranges from low to high (relative to internal noise level)
 a                = 0.67.*b; %0.67   % Does a depend upon b? Yes
 biasAmp          = 0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
@@ -114,74 +114,6 @@ data.params.scale                 = scale;
 data.params.sigma_meta            = sigma_meta;
 data.params.Cc                    = Cc;
 
-% save('modelContOriData.mat', "data")
-
-% %% statistical test
-% A  = resp_err_all; resp_err_by_level = reshape(A, size(A, 1), []); 
-% A  = confidence_report_all; confidence_report_by_level   = reshape(A, size(A, 1), []);
-% 
-% err_HC_1 = resp_err_by_level(1, confidence_report_by_level(1, :) == 1);
-% err_HC_2 = resp_err_by_level(8, confidence_report_by_level(8, :) == 1);
-% err_LC_1 = resp_err_by_level(1, confidence_report_by_level(1, :) == 0);
-% err_LC_2 = resp_err_by_level(8, confidence_report_by_level(8, :) == 0);
-% 
-% d1 = std(err_LC_1) - std(err_HC_1);
-% d2 = std(err_LC_2) - std(err_HC_2);
-% D_obs = d2 - d1;
-% 
-% nBoot = 10000;
-% D_boot = zeros(nBoot,1);
-% 
-% % Do this with simulated data
-% 
-% for i = 1:nBoot
-%     sHC1 = std(err_HC_1(randi(numel(err_HC_1), [numel(err_HC_1), 1])));
-%     sLC1 = std(err_LC_1(randi(numel(err_LC_1), [numel(err_LC_1), 1])));
-%     sHC2 = std(err_HC_2(randi(numel(err_HC_2), [numel(err_HC_2), 1])));
-%     sLC2 = std(err_LC_2(randi(numel(err_LC_2), [numel(err_LC_2), 1])));
-%     
-%     D_boot(i) = (sLC2 - sHC2) - (sLC1 - sHC1);
-% end
-% 
-% p = mean(D_boot >= D_obs);
-% 
-% % 95% percentile CI
-% ci = prctile(D_boot, [2.5 97.5]);
-% 
-% % one-sided p estimate (probability D_boot <= 0)
-% p_one_sided = mean(D_boot <= 0); % small means evidence D>0
-% 
-% fprintf('D_obs=%.4f, CI=[%.4f, %.4f], p_one_sided (D>0) ~= %.4f\n', D_obs, ci(1), ci(2), p_one_sided);
-% 
-% figure
-% hold on
-% histogram(D_boot)
-% xline(D_obs, LineStyle="--")
-% xline(ci(1), LineStyle="-")
-% xline(ci(2), LineStyle="-")
-% hold off
-% 
-% retData = doBootstrapTest(abs(err_HC_1), abs(err_LC_1), abs(err_HC_2), abs(err_LC_2), false);
-% retData
-
-% %% GLME
-% 
-% n_uncertainty_levels  = uncertainty_levels;
-% uncertainty_level_all = repmat((1:n_uncertainty_levels)', 1, size(resp_err_by_level, 2));
-% error                 = abs(resp_err_by_level(:)) ; %+ 1e-12;
-% uncertaintyLevel      = uncertainty_level_all(:);
-% confidence            = confidence_report_by_level(:);
-% T                     = table(error, uncertaintyLevel, confidence);
-% T.confidence          = categorical(T.confidence);  % HC vs LC
-% 
-% % This analysis might be okay if i correct for bias
-% glme = fitglme(T, ...
-%     'error ~ uncertaintyLevel * confidence + (1|uncertaintyLevel)', ...
-%     'Distribution','Gamma', ...
-%     'Link','log');
-% 
-% disp(glme)
-
 %% Histogram (by uncertainty level)
 figure 
 for i=1:uncertainty_levels
@@ -205,7 +137,7 @@ anlytcl_sigma_m_HC = zeros(1, uncertainty_levels);
 anlytcl_sigma_m_LC = zeros(1, uncertainty_levels);
 
 for i=1:uncertainty_levels
-    rvOriErr = -90:3:90;
+    rvOriErr = -90:0.1:90;
     % rvOriErr = -90:0.5:90;
     % modelParams.orientations        = orientations;
     modelParams.sigma_s             = sigma_s(i);
@@ -219,7 +151,7 @@ for i=1:uncertainty_levels
     modelParams.guessRate           = 0;
     
     % retData = getAnalyticalSol_EstimationTask(orientations, rvOriErr, modelParams);
-    retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
+    retData = getPDFs_ind_reduced(modelParams);
     
     anlytcl_sigma_m(i)    = retData.E_sigma_m;
     anlytcl_sigma_m_HC(i) = retData.E_sigma_m_HC;

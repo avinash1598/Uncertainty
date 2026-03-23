@@ -7,23 +7,28 @@
 clear all
 close all
 
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Utils')
-addpath('./LL_scripts/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/LLScriptsTrialData/')
 
-orientations     = 0:10:180; % linspace(0, 180, 18);
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Utils')
+% addpath('./LL_scripts/')
+
+orientations     = 0:15:175; % linspace(0, 180, 18);
 ntrials_per_ori  = 1000;
 b                = 0.01;
 a                = 0.67*b; % Does a depend upon b
-% biasAmp          = 0.5;
-% scale            = 0.5;
-% shape            = 2;   % Change value to set different mean level noise
-% sigma_meta       = 0.2;
-% Cc               = 0.5; %0.5
-biasAmp          = 0;
-shape            = 0.0848; %2;
-scale            = 338.1997; %0.5;
-sigma_meta       = 41.5023; %0.2;
-Cc               = 0.1097; %0.5; 
+biasAmp          = 0.5;
+scale            = 0.5;
+shape            = 2;   % Change value to set different mean level noise
+sigma_meta       = 0.2;
+Cc               = 0.5; %0.5
+% biasAmp          = 0;
+% shape            = 0.0848; %2;
+% scale            = 338.1997; %0.5;
+% sigma_meta       = 41.5023; %0.2;
+% Cc               = 0.1097; %0.5; 
 
 % Preallocate arrays
 n_theta                  = numel(orientations);
@@ -35,9 +40,9 @@ confidence_report_all = zeros(n_theta, ntrials_per_ori);
 
 % Simulation loop
 % Stimulus dependent sensory noise
-sigma_s = [8.0253, 13.1054, 13.4657, 25.9641, 30.2290, 36.0350]';
+% sigma_s = [8.0253, 13.1054, 13.4657, 25.9641, 30.2290, 36.0350]';
 sigma_s_stim = b + a.*(abs(sind(2*orientations))); %sigma_s_stim = sigma_s_stim';
-sigma_s_stim(:) = sigma_s(1);
+% sigma_s_stim(:) = sigma_s(1);
 bias = biasAmp*sind(2*orientations);
 % bias = biasAmp*sind(4*orientations);
 
@@ -55,7 +60,7 @@ for i = 1:n_theta
     sigma_si_modulated = gain;
     % sigma_m_stim = sqrt(sigma_s_stim(i).^2 + sigma_si_modulated.^2);
     sigma_m_stim = sqrt(sigma_s_stim(i).^2 + sigma_si_modulated); % Trying something new
-    mean_m_stim = theta_true + bias(i);
+    mean_m_stim  = theta_true + bias(i);
     
     % TODO: take into account bias?
     % Wrap the angle at the plotting stage. Note: warapping should be
@@ -107,8 +112,9 @@ modelParams.shape               = shape;
 modelParams.scale               = scale;
 modelParams.Cc                  = Cc;
 modelParams.sigma_meta          = sigma_meta;
+modelParams.guessRate           = 0;
 
-retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
+retData = getPDFs_ind_reduced(modelParams);
 
 
 %% Histogram (by orientation)

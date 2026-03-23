@@ -11,14 +11,13 @@ param_Cc             = params(nLevels + 3);
 param_guessrate      = params(nLevels + 4);
 
 if fitType == "full"
-    param_ori_scale = params(nLevels + 5);
-    param_bias      = params(nLevels + 6);
-elseif fitType == "full_jumbo"
-    param_a               = params(nLevels + 5:nLevels + 4 + nLevels);
-    param_bias            = params(2*nLevels + 5);
+    %param_ori_scale = params(nLevels + 5);
+    %param_bias      = params(nLevels + 6);
     % Hardcoding values for now
     %param_a               = metaData.a; % params(nLevels + 5:nLevels + 4 + nLevels);
     %param_bias            = metaData.biasAmp; %params(2*nLevels + 5);
+    param_a               = params(nLevels + 5:nLevels + 4 + nLevels);
+    param_bias            = params(2*nLevels + 5);
 end
 
 % Metadata
@@ -27,9 +26,12 @@ trlErrors            = metaData.trlErrors;
 trlConfReports       = metaData.trlConfReports;
 trlUncertaintyLevels = metaData.trlUncertaintyLevels;
 trlStimOris          = metaData.trlStimOris;
-sigma_m_shape1       = metaData.sigma_m_shape1;
-sigma_m_shape2       = metaData.sigma_m_shape2;
-biasShape            = metaData.biasShape;
+
+if fitType == "full"
+    sigma_m_shape1       = metaData.sigma_m_shape1;
+    sigma_m_shape2       = metaData.sigma_m_shape2;
+    biasShape            = metaData.biasShape;
+end    
 
 trial_probs      = zeros(size(trlErrors));
 trial_probs_HC   = zeros(size(trlErrors));   % conditional prob of error given conf report - HC
@@ -42,23 +44,17 @@ for i=1:nLevels
     modelParams.Cc                  = param_Cc;
     modelParams.sigma_meta          = param_sigma_meta;
     modelParams.guessRate           = param_guessrate;
-    %modelParams.oriErrBinWidth      = 0.1;
+    % modelParams.oriErrBinWidth      = 2;
     
-    if fitType == "full" || fitType == "full_jumbo"
-
-        if fitType == "full"
-            modelParams.a              = param_ori_scale.*param_sigma_s(i);
-        elseif fitType == "full_jumbo"
-            modelParams.a              = param_a(i); 
-        end
-        
+    if fitType == "full"
         modelParams.b              = param_sigma_s(i);
+        modelParams.a              = param_a(i); %param_ori_scale.*param_sigma_s(i); %param_a(i); 
         modelParams.biasAmp        = param_bias;
         modelParams.sigma_m_shape1 = sigma_m_shape1;
         modelParams.sigma_m_shape2 = sigma_m_shape2;
         modelParams.biasShape      = biasShape;
         
-        retData = getPDFs_cov(orientations, modelParams, true); % Seems like setting this to false makes things slow
+        retData = getEstimationsPDF_cov(orientations, modelParams, true); % Seems like setting this to false makes things slow
         
         for j = 1:numel(orientations)
             
@@ -70,6 +66,7 @@ for i=1:nLevels
                 trlErrors(idx), ...
                 'linear');
             
+
             % PDF HC
             idxHC = (trlConfReports == 1) & idx;
             trial_probs_HC(idxHC) = interp1( ...
@@ -89,45 +86,19 @@ for i=1:nLevels
             trial_probs_Conf(idxLC) = retData.pLC_stim(j); % Mutually exclusive from LC
 
         end
-    elseif fitType == "reduced"
-        retData = getPDFs_cov_reduced(modelParams, true); % originally set to true
-        
-        % PDF
-        idx = (trlUncertaintyLevels == i);
-        trial_probs(idx) = interp1( ...
-            retData.rvOriErrs, ...
-            retData.analyticalPDF(:), ...
-            trlErrors(idx), ...
-            'linear');
-        
-        % PDF HC
-        idxHC = (trlConfReports == 1) & idx;
-        trial_probs_HC(idxHC) = interp1( ...
-            retData.rvOriErrs, ...
-            retData.analyticalPDF_HC(:), ...
-            trlErrors(idxHC), ...
-            'linear');
-        trial_probs_Conf(idxHC) = retData.pHC;
-        
-        % PDF LC
-        idxLC = (trlConfReports == 0) & idx;
-        trial_probs_LC(idxLC) = interp1( ...
-            retData.rvOriErrs, ...
-            retData.analyticalPDF_LC(:), ...
-            trlErrors(idxLC), ...
-            'linear');
-        trial_probs_Conf(idxLC) = retData.pLC; % Mutually exclusive from LC
-    
     end
 
 end
 
 % NLL loss
+
 ll_HC = log( trial_probs_HC .* trial_probs_Conf + eps); % P(ERR/HC)*P(HC) or P(ERR/LC)*P(LC)
 ll_LC = log( trial_probs_LC .* trial_probs_Conf + eps);
 ll    = log( trial_probs + eps ); 
 
-nll = ( ll_HC + ll_LC); %ll + 
+nll = ( ll + ll_HC + ll_LC);
+% nll = - sum(nll(:), 'omitnan'); % omitnan or not?? Probably not. It
+% messes up with optimization
 nll = - sum(nll(:));
 
 end

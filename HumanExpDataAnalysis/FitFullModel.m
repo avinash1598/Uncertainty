@@ -1,4 +1,4 @@
-% close all
+close all
 clear all
 
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
@@ -20,10 +20,13 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 expData            = load('./Data/COR33.mat'); % Akash
 % expData            = load('./Data/COR31.mat'); % Tien
 % expData            = load('./Data/COR32.mat'); % Jiaming
+% expData            = load('./Data/CORNFB02.mat');% Jonathan
 
-fltData       = expData.dat( expData.dat.session > 0 , :); 
+fltData       = expData.dat( expData.dat.session > 2 , :); 
 f.dat         = fltData;
 formattedData = formatExpData(f, false, false); % no de-baising, work with raw errors
+
+initCond = getInitialConditions(formattedData);
 
 %%
 % Don't bin - this is not right
@@ -34,15 +37,16 @@ optParams.hyperParamC1 = 0; % 10 or 100? Use 10 maybe to avoid overfitting
 optParams.hyperParamC2 = 0;
 optParams.randomGuessModel = true;
 
-result = Optimize(formattedData, "cov", [], optParams, "full");
+result = Optimize(formattedData, initCond, "cov", [], optParams, "full");
 
 %%
-save("akash_full_model_cov_fit_method_wraped_gauss.mat", "result");
+% save("akash_full_model_cov_fit_method_wraped_gauss.mat", "result");
 
 %%
 % load('akash_full_model_ind_fit_method_2.mat');
 % load('akash_full_model_cov_fit_method_2.mat');
 % load('tien_full_model_cov_fit_method_2.mat');
+% load("akash_full_model_cov_fit_method_wraped_gauss.mat")
 errBins   = -90:3:90; 
 
 [~, idx] = min(result.f);
@@ -55,7 +59,8 @@ opt_param_scale           = result.x(idx ,n_uncertainty_levels + 2-1);
 opt_param_sigma_meta      = result.x(idx, n_uncertainty_levels + 3-1);
 opt_param_Cc              = result.x(idx, n_uncertainty_levels + 4-1);
 opt_param_guessrate       = result.x(idx, n_uncertainty_levels + 5-1);
-opt_param_sigma_ori_scale = result.x(idx, n_uncertainty_levels + 6-1);
+opt_param_sigma_a         = result.x(idx, n_uncertainty_levels + 5:2*n_uncertainty_levels + 4);
+% opt_param_sigma_ori_scale = result.x(idx, n_uncertainty_levels + 6-1);
 opt_param_bias            = result.x(idx, n_uncertainty_levels + 7-1);
 
 % Display parameters
@@ -63,12 +68,16 @@ for i =1:n_uncertainty_levels
     fprintf("Fit: %.4f \n", opt_param_sigma_s(i))
 end
 
+for i =1:n_uncertainty_levels
+    fprintf("Fit: %.4f \n", opt_param_sigma_a(i))
+end
+
 % fprintf("Shape Fit: %.4f \n", opt_param_shape)
 fprintf("Scale Fit: %.4f \n", opt_param_scale)
 fprintf("Meta Fit: %.4f \n", opt_param_sigma_meta)
 fprintf("Cc Fit: %.4f \n", opt_param_Cc)
 fprintf("GR Fit: %.4f \n", opt_param_guessrate)
-fprintf("Ori scale Fit: %.4f \n", opt_param_sigma_ori_scale)
+% fprintf("Ori scale Fit: %.4f \n", opt_param_sigma_ori_scale)
 fprintf("Bias Fit: %.4f \n", opt_param_bias)
 
 % full model - might not be nice for human subjects - might need more
@@ -76,5 +85,8 @@ fprintf("Bias Fit: %.4f \n", opt_param_bias)
 
 %% TODO: plot
 modelParams = result.x(idx, :);
+% modelParams(n_uncertainty_levels + 5: 2*n_uncertainty_levels + 4) = opt_param_sigma_a
 % modelParams(9) = 6.8;
-plotFitResult_guessrate(formattedData, modelParams, "cov", errBins, true)
+% TODO: get intial parameters
+plotFitResult_guessrate(formattedData, modelParams, initCond, "cov", errBins, true)
+

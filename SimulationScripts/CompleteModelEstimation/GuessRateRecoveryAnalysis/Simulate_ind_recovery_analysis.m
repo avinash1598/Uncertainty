@@ -7,118 +7,155 @@
 clear all
 close all
 
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Utils')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/SimulationScripts/CompleteModelEstimation/GenerateSimulatedData')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Utils')
 
-orientations     = linspace(0, 179, 10); %0:10:180; % 
-ntrials_per_ori  = 25; %1000;
-b                = linspace(0.1, 1.5, 6); % 1.2 % Choose b such that average noise level ranges from low to high (relative to internal noise level)
-a                = 0*0.67.*b; %0.67   % Does a depend upon b? Yes
+% orientations     = linspace(0, 179, 10); %0:10:180; % 
+% ntrials_per_ori  = 25; %1000;
+% b                = linspace(0.1, 1.5, 6); % 1.2 % Choose b such that average noise level ranges from low to high (relative to internal noise level)
+% a                = 0*0.67.*b; %0.67   % Does a depend upon b? Yes
+% biasAmp          = 0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
+% shape            = 2;
+% scale            = 0.5;
+% sigma_meta       = 0.2;
+% Cc               = 0.7; 
+% guessRate        = 0;
+% 
+% % biasAmp          = 0; %0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
+% % shape            = 0.0848; %2;
+% % scale            = 338.1997; %0.5;
+% % sigma_meta       = 41.5023; %0.2;
+% % Cc               = 0.1097; %0.5; 
+% 
+% % biasAmp          = 0;
+% % shape            = 2; %2;
+% % scale            = 500; %0.5;
+% % sigma_meta       = 20; %0.2;
+% % Cc               = 0.05; %0.5; 
+% 
+% % Preallocate arrays
+% n_theta                  = numel(orientations);
+% uncertainty_levels       = numel(b);
+% n_uncertainty_levels     = numel(b);
+% 
+% % Only record data which would actually be recorded during experiment
+% theta_true_all        = zeros(uncertainty_levels, n_theta, ntrials_per_ori);
+% theta_resp_all        = zeros(uncertainty_levels, n_theta, ntrials_per_ori); % Recorded theta based on user response
+% confidence_report_all = zeros(uncertainty_levels, n_theta, ntrials_per_ori);
+% 
+% % Simulation loop
+% % Stimulus dependent sensory noise
+% % sigma_s = [8.0253, 13.1054, 13.4657, 25.9641, 30.2290, 36.0350]';
+% % sigma_s = [7.7131, 11.268, 16.754, 25.546, 41.216, 45.754 ]';
+% % sigma_s_stim = repmat(sigma_s, [1 n_theta]);
+% sigma_s_stim = b' + a'*(abs(sind(2*orientations)));
+% bias = biasAmp*sind(2*orientations); 
+% 
+% for l=1:uncertainty_levels
+%     for i = 1:n_theta
+%         theta_true = orientations(i);   % True orientation
+%         trials = ntrials_per_ori;
+%         
+%         % Step1: Using estimate of this uncertainty, the subject estimates
+%         % the orientation
+%         % Internal estimate (Gaussian noise) - Note: this is not wraped
+%         % In actual behavioral data this will be wraped
+%         % theta_est = theta_true + sigma_p * randn(trials, 1);
+%         % Find doubly stochastic theta
+%         gain = gamrnd(shape, scale, [trials 1]);
+%         sigma_si_modulated = gain;
+%         sigma_m_stim = sqrt(sigma_s_stim(l, i).^2 + sigma_si_modulated);
+%         mean_m_stim = theta_true + bias(i);
+%         
+%         % TODO: take into account bias?
+%         % Wrap the angle at the plotting stage. Note: warapping should be
+%         % performed according to the true angle.
+%         theta_est = mean_m_stim + sigma_m_stim .* randn(trials, 1);
+%         theta_est = mod(theta_est, 180); 
+%         
+%         % Simulat guess rate
+%         guess_tl_idx = randi([1 trials], floor( trials*guessRate ), 1);
+%         guessOris = 180*rand(numel(guess_tl_idx), 1);
+%         theta_est(guess_tl_idx) = guessOris;
+%         
+%         assert(numel(sigma_m_stim) == trials);
+%         
+%         % Step1: Subject first gets an estimate of its uncertainty
+%         % Subject’s estimate of their uncertainty (meta-uncertainty)
+%         mu_log = log(sigma_m_stim.^2 ./ sqrt(sigma_meta.^2 + sigma_m_stim.^2));
+%         sigma_log = sqrt(log(1 + (sigma_meta.^2 ./ sigma_m_stim.^2)));
+%         sigma_hat = lognrnd(mu_log, sigma_log, trials, 1);
+%         
+%         % Confidence variable
+%         Vc = 1 ./ sigma_hat;
+%         
+%         % Store
+%         theta_true_all(l, i, :)         = theta_true;
+%         theta_resp_all(l, i, :)         = theta_est;
+%         confidence_report_all(l, i, :)  = Vc > Cc;
+%     end
+% end
+% 
+% % Plot the performance curves
+% resp_err_all = (theta_resp_all - theta_true_all);
+% resp_err_all = mod(resp_err_all + 90, 180) - 90; % Find minimum acute angle error
+% 
+% resp_err_all_reshaped = reshape(resp_err_all, uncertainty_levels, []);
+% confidence_report_all_reshaped = reshape(confidence_report_all, uncertainty_levels, []);
+% 
+% % Save model data
+% % data.stimOri                = theta_true_all;
+% % data.reportedOri            = theta_resp_all;
+% data.theta_true_all         = theta_true_all;
+% data.theta_resp_all         = theta_resp_all;
+% data.resp_err_all           = resp_err_all;
+% data.confidence_report_all  = confidence_report_all;
+% data.stdByOri               = squeeze( std(resp_err_all, 0, 3) );
+% data.madByOri               = squeeze( mad(resp_err_all, 1, 3) );
+% data.orientations           = orientations';
+% 
+% T = table( ...
+%     data.theta_true_all(:), ...
+%     data.resp_err_all(:), ...
+%     'VariableNames', {'theta_true', 'resp_err'});
+% G = groupsummary(T, {'theta_true'}, {'mean'}, 'resp_err');
+% data.bias = G.mean_resp_err;
+% 
+% % data.err         = resp_err_all;
+% % data.confReport  = confidence_report_all;
+% 
+% data.params.sigma_s_reduced_model = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 )';
+% data.params.b                     = b;
+% data.params.a                     = a;
+% data.params.biasAmp               = biasAmp;
+% data.params.shape                 = shape;
+% data.params.scale                 = scale;
+% data.params.sigma_meta            = sigma_meta;
+% data.params.Cc                    = Cc;
+% data.params.guessRate             = guessRate;
+
+orientations     = 0:15:175; 
+n_uncertainty_levels = 6;
+ori_scale        = 0.67;
+b                = linspace(0.1, 1.5, n_uncertainty_levels); % 1.2 % Choose b such that average noise level ranges from low to high (relative to internal noise level)
+a                = ori_scale.*b;
+% a                = 0.67.*b; %0.67   % Does a depend upon b? Yes
 biasAmp          = 0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
 shape            = 2;
 scale            = 0.5;
 sigma_meta       = 0.2;
 Cc               = 0.7; 
-guessRate        = 0.1;
+guessRate        = 0;
 
-% biasAmp          = 0; %0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
-% shape            = 0.0848; %2;
-% scale            = 338.1997; %0.5;
-% sigma_meta       = 41.5023; %0.2;
-% Cc               = 0.1097; %0.5; 
+sigma_s_stim          = b' + (ori_scale.*b)'*(abs(sind(orientations - 90)));
+bias                  = biasAmp*sind(2*orientations); 
+sigma_s_reduced_model = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 )';
 
-% biasAmp          = 0;
-% shape            = 2; %2;
-% scale            = 500; %0.5;
-% sigma_meta       = 20; %0.2;
-% Cc               = 0.05; %0.5; 
-
-% Preallocate arrays
-n_theta                  = numel(orientations);
-uncertainty_levels       = numel(b);
-n_uncertainty_levels     = numel(b);
-
-% Only record data which would actually be recorded during experiment
-theta_true_all        = zeros(uncertainty_levels, n_theta, ntrials_per_ori);
-theta_resp_all        = zeros(uncertainty_levels, n_theta, ntrials_per_ori); % Recorded theta based on user response
-confidence_report_all = zeros(uncertainty_levels, n_theta, ntrials_per_ori);
-
-% Simulation loop
-% Stimulus dependent sensory noise
-% sigma_s = [8.0253, 13.1054, 13.4657, 25.9641, 30.2290, 36.0350]';
-% sigma_s = [7.7131, 11.268, 16.754, 25.546, 41.216, 45.754 ]';
-% sigma_s_stim = repmat(sigma_s, [1 n_theta]);
-sigma_s_stim = b' + a'*(abs(sind(2*orientations)));
-bias = biasAmp*sind(2*orientations); 
-
-for l=1:uncertainty_levels
-    for i = 1:n_theta
-        theta_true = orientations(i);   % True orientation
-        trials = ntrials_per_ori;
-        
-        % Step1: Using estimate of this uncertainty, the subject estimates
-        % the orientation
-        % Internal estimate (Gaussian noise) - Note: this is not wraped
-        % In actual behavioral data this will be wraped
-        % theta_est = theta_true + sigma_p * randn(trials, 1);
-        % Find doubly stochastic theta
-        gain = gamrnd(shape, scale, [trials 1]);
-        sigma_si_modulated = gain;
-        sigma_m_stim = sqrt(sigma_s_stim(l, i).^2 + sigma_si_modulated);
-        mean_m_stim = theta_true + bias(i);
-        
-        % TODO: take into account bias?
-        % Wrap the angle at the plotting stage. Note: warapping should be
-        % performed according to the true angle.
-        theta_est = mean_m_stim + sigma_m_stim .* randn(trials, 1);
-        theta_est = mod(theta_est, 180); 
-        
-        % Simulat guess rate
-        guess_tl_idx = randi([1 trials], floor( trials*guessRate ), 1);
-        guessOris = 180*rand(numel(guess_tl_idx), 1);
-        theta_est(guess_tl_idx) = guessOris;
-        
-        assert(numel(sigma_m_stim) == trials);
-        
-        % Step1: Subject first gets an estimate of its uncertainty
-        % Subject’s estimate of their uncertainty (meta-uncertainty)
-        mu_log = log(sigma_m_stim.^2 ./ sqrt(sigma_meta.^2 + sigma_m_stim.^2));
-        sigma_log = sqrt(log(1 + (sigma_meta.^2 ./ sigma_m_stim.^2)));
-        sigma_hat = lognrnd(mu_log, sigma_log, trials, 1);
-        
-        % Confidence variable
-        Vc = 1 ./ sigma_hat;
-        
-        % Store
-        theta_true_all(l, i, :)         = theta_true;
-        theta_resp_all(l, i, :)         = theta_est;
-        confidence_report_all(l, i, :)  = Vc > Cc;
-    end
-end
-
-% Plot the performance curves
-resp_err_all = (theta_resp_all - theta_true_all);
-resp_err_all = mod(resp_err_all + 90, 180) - 90; % Find minimum acute angle error
-
-resp_err_all_reshaped = reshape(resp_err_all, uncertainty_levels, []);
-confidence_report_all_reshaped = reshape(confidence_report_all, uncertainty_levels, []);
-
-% Save model data
-data.stimOri                = theta_true_all;
-data.reportedOri            = theta_resp_all;
-data.resp_err_all           = resp_err_all;
-data.confidence_report_all  = confidence_report_all;
-% data.err         = resp_err_all;
-% data.confReport  = confidence_report_all;
-
-data.params.sigma_s_reduced_model = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 )';
-data.params.b                     = b;
-data.params.a                     = a;
-data.params.biasAmp               = biasAmp;
-data.params.shape                 = shape;
-data.params.scale                 = scale;
-data.params.sigma_meta            = sigma_meta;
-data.params.Cc                    = Cc;
-data.params.guessRate             = guessRate;
+% modelParams = [sigma_s_reduced_model shape scale sigma_meta Cc guessRate];
+% modelParams = [b shape scale sigma_meta Cc guessRate ori_scale biasAmp];
+modelParams = [b shape scale sigma_meta Cc guessRate a biasAmp];
+data        = GenerateIndData(modelParams, n_uncertainty_levels, 'full_jumbo');
+initCond    = getInitialConditions(data);
 
 %% Optimize
 errBins = -90:0.1:90;
@@ -127,7 +164,7 @@ optParams.nStarts = 1;
 optParams.hyperParamC1 = 0;
 optParams.randomGuessModel = true;
 
-result = Optimize(data, errBins, "ind", [], optParams, 'reduced');
+result = Optimize(data, initCond, "ind", [], optParams, 'full_jumbo');
 
 %%
 [~, idx] = min(result.f);
@@ -138,59 +175,67 @@ opt_param_scale          = result.x(idx ,n_uncertainty_levels + 2);
 opt_param_sigma_meta     = result.x(idx, n_uncertainty_levels + 3);
 opt_param_Cc             = result.x(idx, n_uncertainty_levels + 4);
 opt_param_guessrate      = result.x(idx, n_uncertainty_levels + 5);
+% opt_param_oriscale       = result.x(idx, n_uncertainty_levels + 5);
+% opt_param_bias           = result.x(idx, n_uncertainty_levels + 5);
 
-% opt_param_sigma_s        = result.x(idx, 1:n_uncertainty_levels);
-% opt_param_scale          = result.x(idx ,n_uncertainty_levels + 1);
-% opt_param_sigma_meta     = result.x(idx, n_uncertainty_levels + 2);
-% opt_param_Cc             = result.x(idx, n_uncertainty_levels + 3);
-% opt_param_guessrate      = result.x(idx, n_uncertainty_levels + 4);
-
-gt_sigma_s    = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 );
-gt_shape      = shape;
-gt_scale      = scale;
-gt_sigma_meta = sigma_meta;
-gt_Cc         = Cc;
-gt_guessrate  = guessRate;
+% % opt_param_sigma_s        = result.x(idx, 1:n_uncertainty_levels);
+% % opt_param_scale          = result.x(idx ,n_uncertainty_levels + 1);
+% % opt_param_sigma_meta     = result.x(idx, n_uncertainty_levels + 2);
+% % opt_param_Cc             = result.x(idx, n_uncertainty_levels + 3);
+% % opt_param_guessrate      = result.x(idx, n_uncertainty_levels + 4);
+% 
+% gt_sigma_s    = b; %data.params.sigma_s_reduced_model;
+% gt_shape      = shape;
+% gt_scale      = scale;
+% gt_sigma_meta = sigma_meta;
+% gt_Cc         = Cc;
+% gt_guessrate  = guessRate;
+% gt_oriscale   = ori_scale;
+% gt_bias       = biasAmp;
 
 % Display parameters
-for i =1:n_uncertainty_levels
-    fprintf("GT: %.4f, Fit: %.4f \n", gt_sigma_s(i), opt_param_sigma_s(i))
+for i=1:numel(modelParams)
+    fprintf("GT: %.4f, Fit: %.4f \n", modelParams(i), result.x(idx, i))
 end
 
-fprintf("GT: %.4f, Fit: %.4f \n", gt_shape, opt_param_shape)
-fprintf("GT: %.4f, Fit: %.4f \n", gt_scale, opt_param_scale)
-fprintf("GT: %.4f, Fit: %.4f \n", gt_sigma_meta, opt_param_sigma_meta)
-fprintf("GT: %.4f, Fit: %.4f \n", gt_Cc, opt_param_Cc)
-fprintf("GT: %.4f, Fit: %.4f \n", gt_guessrate, opt_param_guessrate)
+% for i =1:n_uncertainty_levels
+%     fprintf("GT: %.4f, Fit: %.4f \n", modelParams(i), result.x(idx, i))
+% end
+% 
+% for i =1:n_uncertainty_levels
+%     fprintf("GT: %.4f, Fit: %.4f \n", modelParams(n_uncertainty_levels + 6 + i), result.x(idx, n_uncertainty_levels + 6 + i))
+% end
+
+% fprintf("GT: %.4f, Fit: %.4f \n",  modelParams(n_uncertainty_levels+1), result.x(idx, n_uncertainty_levels+1))
+% fprintf("GT: %.4f, Fit: %.4f \n", modelParams(n_uncertainty_levels+2), result.x(idx, n_uncertainty_levels+2))
+% fprintf("GT: %.4f, Fit: %.4f \n", modelParams(n_uncertainty_levels+3), result.x(idx, n_uncertainty_levels+3))
+% fprintf("GT: %.4f, Fit: %.4f \n", modelParams(n_uncertainty_levels+4), result.x(idx, n_uncertainty_levels+4))
+% fprintf("GT: %.4f, Fit: %.4f \n", modelParams(n_uncertainty_levels+5), result.x(idx, n_uncertainty_levels+5))
+% fprintf("GT: %.4f, Fit: %.4f \n", modelParams(n_uncertainty_levels+6), result.x(idx, n_uncertainty_levels+6))
+% fprintf("GT: %.4f, Fit: %.4f \n", modelParams(n_uncertainty_levels+7), result.x(n_uncertainty_levels+7))
 
 %% Get analytical solution
-anlytcl_sigma_m_stim = zeros(1, uncertainty_levels);
-anlytcl_sigma_m_stim_HC = zeros(1, uncertainty_levels);
-anlytcl_sigma_m_stim_LC = zeros(1, uncertainty_levels);
-anlytcl_mad_m_stim = zeros(1, uncertainty_levels);
-anlytcl_mad_m_stim_HC = zeros(1, uncertainty_levels);
-anlytcl_mad_m_stim_LC = zeros(1, uncertainty_levels);
+anlytcl_sigma_m_stim = zeros(1, n_uncertainty_levels);
+anlytcl_sigma_m_stim_HC = zeros(1, n_uncertainty_levels);
+anlytcl_sigma_m_stim_LC = zeros(1, n_uncertainty_levels);
+anlytcl_mad_m_stim = zeros(1, n_uncertainty_levels);
+anlytcl_mad_m_stim_HC = zeros(1, n_uncertainty_levels);
+anlytcl_mad_m_stim_LC = zeros(1, n_uncertainty_levels);
 
-for i=1:uncertainty_levels
+for i=1:n_uncertainty_levels
     rvOriErr = errBins;
+        
+    mP.a                   = opt_param_sigma_s(i);
+    mP.sigma_s             = opt_param_sigma_s(i);
+    mP.shape               = opt_param_shape;
+    mP.scale               = opt_param_scale;
+    mP.Cc                  = opt_param_Cc;
+    mP.sigma_meta          = opt_param_sigma_meta;
+    mP.guessRate           = opt_param_guessrate;
     
-%     modelParams.sigma_s             = data.params.sigma_s_reduced_model(i);
-%     modelParams.biasAmp             = biasAmp;
-%     modelParams.shape               = shape;
-%     modelParams.scale               = scale;
-%     modelParams.Cc                  = Cc;
-%     modelParams.sigma_meta          = sigma_meta;
-%     modelParams.guessRate           = guessRate;
-    
-    modelParams.sigma_s             = opt_param_sigma_s(i);
-    modelParams.shape               = opt_param_shape;
-    modelParams.scale               = opt_param_scale;
-    modelParams.Cc                  = opt_param_Cc;
-    modelParams.sigma_meta          = opt_param_sigma_meta;
-    modelParams.guessRate           = opt_param_guessrate;
-    
-%     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
-    retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
+    retData = getPDFs_ind_reduced(mP);
+    %retData = getPDFs_ind(modelParams);
+    %retData = getPDFs_ind_reduced(modelParams);
     
     anlytcl_sigma_m_stim(i)    = retData.E_sigma_m;
     anlytcl_sigma_m_stim_HC(i) = retData.E_sigma_m_HC;
@@ -210,30 +255,22 @@ n_uncertainty_levels = numel(b);
 
 for i=1:n_uncertainty_levels
     
-%     modelParams.sigma_s             = data.params.sigma_s_reduced_model(i);
-%     modelParams.shape               = shape;
-%     modelParams.biasAmp             = biasAmp;
-%     modelParams.scale               = scale;
-%     modelParams.Cc                  = Cc;
-%     modelParams.sigma_meta          = sigma_meta;
-%     modelParams.guessRate           = guessRate;
+    mP.a                   = opt_param_sigma_s(i);
+    mP.sigma_s             = opt_param_sigma_s(i);
+    mP.shape               = opt_param_shape;
+    mP.scale               = opt_param_scale;
+    mP.Cc                  = opt_param_Cc;
+    mP.sigma_meta          = opt_param_sigma_meta;
+    mP.guessRate           = opt_param_guessrate;
     
-    modelParams.sigma_s             = opt_param_sigma_s(i);
-    modelParams.shape               = opt_param_shape;
-    modelParams.scale               = opt_param_scale;
-    modelParams.Cc                  = opt_param_Cc;
-    modelParams.sigma_meta          = opt_param_sigma_meta;
-    modelParams.guessRate           = opt_param_guessrate;
-    
-%     retData = getEstimationsPDF_cov_reduced(rvOriErr, modelParams);
-    retData = getEstimatesPDFs_reduced_model(rvOriErr, modelParams);
+    retData = getPDFs_ind_reduced(mP);
     
     subplot(2, n_uncertainty_levels/2, i)
     hold on
     
-    grpOriErr = resp_err_all_reshaped(i, :);
-    histogram(grpOriErr, rvOriErr, Normalization="pdf");
-    plot(rvOriErr, retData.analyticalPDF, LineWidth=1.5);
+    grpOriErr = data.resp_err_all(i, :);
+    histogram(grpOriErr(:), rvOriErr, Normalization="pdf");
+    plot(retData.rvOriErrs, retData.analyticalPDF, LineWidth=1.5);
     
     xlabel("Orientation (deg)")
     ylabel("count")
@@ -244,6 +281,9 @@ end
 %% Plot results
 
 figure
+
+resp_err_all_reshaped = reshape(data.resp_err_all, n_uncertainty_levels, []);
+confidence_report_all_reshaped = reshape(data.confidence_report_all, n_uncertainty_levels, []);
 
 mean_sigma_s_stim = mean(sigma_s_stim, 2);
 
@@ -271,8 +311,8 @@ y_LC_m = mad(resp_LC, 1, 2);
 
 x1 = resp_HC(1, :); valid_idx = ~isnan(x1); x1 = x1(valid_idx);
 x2 = resp_LC(1, :); valid_idx = ~isnan(x2); x2 = x2(valid_idx);
-x3 = resp_HC(uncertainty_levels, :); valid_idx = ~isnan(x3); x3 = x3(valid_idx);
-x4 = resp_LC(uncertainty_levels, :); valid_idx = ~isnan(x4); x4 = x4(valid_idx);
+x3 = resp_HC(n_uncertainty_levels, :); valid_idx = ~isnan(x3); x3 = x3(valid_idx);
+x4 = resp_LC(n_uncertainty_levels, :); valid_idx = ~isnan(x4); x4 = x4(valid_idx);
 
 subplot(2, 3, 1)
 errorbar(mean_sigma_s_stim, ...

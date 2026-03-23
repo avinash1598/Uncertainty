@@ -11,7 +11,7 @@ addpath('LL_scripts/')
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Utils')
 
 orientations     = 0:15:175; %linspace(0, 180, 18); %0:10:180; % linspace(0, 180, 18);
-ntrials_per_ori  = 25; %250;
+ntrials_per_ori  = 2500; %250;
 b                = linspace(1, 2.2, 6); % linspace(1, 2.2, 8); Note: different minimum noise level (0.1). Choose b such that average noise level ranges from low to high (relative to internal noise level)
 a                = 0.67.*b; %0.67.*b;   % Does a depend upon b? Yes
 biasAmp          = 0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
@@ -34,6 +34,7 @@ confidence_report_all = zeros(uncertainty_levels, n_theta, ntrials_per_ori);
 % Stimulus dependent sensory noise
 sigma_s_stim = b' + a'*(abs(sind(2*orientations)));
 bias = biasAmp*sind(2*orientations); 
+sigma_s = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 )';
 
 for l=1:uncertainty_levels
     for i = 1:n_theta
@@ -113,71 +114,71 @@ data.params.Cc                    = Cc;
 save('modelContOriData_cov.mat', "data")
 
 
-%% statistical test
-A  = resp_err_all; resp_err_by_level = reshape(A, size(A, 1), []); 
-A  = confidence_report_all; confidence_report_by_level   = reshape(A, size(A, 1), []);
+% %% statistical test
+% A  = resp_err_all; resp_err_by_level = reshape(A, size(A, 1), []); 
+% A  = confidence_report_all; confidence_report_by_level   = reshape(A, size(A, 1), []);
+% 
+% err_HC_1 = resp_err_by_level(1, confidence_report_by_level(1, :) == 1);
+% err_HC_2 = resp_err_by_level(6, confidence_report_by_level(6, :) == 1);
+% err_LC_1 = resp_err_by_level(1, confidence_report_by_level(1, :) == 0);
+% err_LC_2 = resp_err_by_level(6, confidence_report_by_level(6, :) == 0);
+% 
+% d1 = std(err_LC_1) - std(err_HC_1);
+% d2 = std(err_LC_2) - std(err_HC_2);
+% D_obs = d2 - d1;
+% 
+% nBoot = 10000;
+% D_boot = zeros(nBoot,1);
+% 
+% % Do this with simulated data
+% 
+% for i = 1:nBoot
+%     sHC1 = std(err_HC_1(randi(numel(err_HC_1), [numel(err_HC_1), 1])));
+%     sLC1 = std(err_LC_1(randi(numel(err_LC_1), [numel(err_LC_1), 1])));
+%     sHC2 = std(err_HC_2(randi(numel(err_HC_2), [numel(err_HC_2), 1])));
+%     sLC2 = std(err_LC_2(randi(numel(err_LC_2), [numel(err_LC_2), 1])));
+%     
+%     D_boot(i) = (sLC2 - sHC2) - (sLC1 - sHC1);
+% end
+% 
+% p = mean(D_boot >= D_obs);
+% 
+% % 95% percentile CI
+% ci = prctile(D_boot, [2.5 97.5]);
+% 
+% % one-sided p estimate (probability D_boot <= 0)
+% p_one_sided = mean(D_boot <= 0); % small means evidence D>0
+% 
+% fprintf('D_obs=%.4f, CI=[%.4f, %.4f], p_one_sided (D>0) ~= %.4f\n', D_obs, ci(1), ci(2), p_one_sided);
+% 
+% figure
+% hold on
+% histogram(D_boot)
+% xline(D_obs, LineStyle="--")
+% xline(ci(1), LineStyle="-")
+% xline(ci(2), LineStyle="-")
+% hold off
+% 
+% retData = doBootstrapTest(abs(err_HC_1), abs(err_LC_1), abs(err_HC_2), abs(err_LC_2), true);
+% retData
 
-err_HC_1 = resp_err_by_level(1, confidence_report_by_level(1, :) == 1);
-err_HC_2 = resp_err_by_level(6, confidence_report_by_level(6, :) == 1);
-err_LC_1 = resp_err_by_level(1, confidence_report_by_level(1, :) == 0);
-err_LC_2 = resp_err_by_level(6, confidence_report_by_level(6, :) == 0);
-
-d1 = std(err_LC_1) - std(err_HC_1);
-d2 = std(err_LC_2) - std(err_HC_2);
-D_obs = d2 - d1;
-
-nBoot = 10000;
-D_boot = zeros(nBoot,1);
-
-% Do this with simulated data
-
-for i = 1:nBoot
-    sHC1 = std(err_HC_1(randi(numel(err_HC_1), [numel(err_HC_1), 1])));
-    sLC1 = std(err_LC_1(randi(numel(err_LC_1), [numel(err_LC_1), 1])));
-    sHC2 = std(err_HC_2(randi(numel(err_HC_2), [numel(err_HC_2), 1])));
-    sLC2 = std(err_LC_2(randi(numel(err_LC_2), [numel(err_LC_2), 1])));
-    
-    D_boot(i) = (sLC2 - sHC2) - (sLC1 - sHC1);
-end
-
-p = mean(D_boot >= D_obs);
-
-% 95% percentile CI
-ci = prctile(D_boot, [2.5 97.5]);
-
-% one-sided p estimate (probability D_boot <= 0)
-p_one_sided = mean(D_boot <= 0); % small means evidence D>0
-
-fprintf('D_obs=%.4f, CI=[%.4f, %.4f], p_one_sided (D>0) ~= %.4f\n', D_obs, ci(1), ci(2), p_one_sided);
-
-figure
-hold on
-histogram(D_boot)
-xline(D_obs, LineStyle="--")
-xline(ci(1), LineStyle="-")
-xline(ci(2), LineStyle="-")
-hold off
-
-retData = doBootstrapTest(abs(err_HC_1), abs(err_LC_1), abs(err_HC_2), abs(err_LC_2), true);
-retData
-
-%% GLME
-
-n_uncertainty_levels  = uncertainty_levels;
-uncertainty_level_all = repmat((1:n_uncertainty_levels)', 1, size(resp_err_by_level, 2));
-error                 = abs(resp_err_by_level(:)) ; %+ 1e-12;
-uncertaintyLevel      = uncertainty_level_all(:);
-confidence            = confidence_report_by_level(:);
-T                     = table(error, uncertaintyLevel, confidence);
-T.confidence          = categorical(T.confidence);  % HC vs LC
-
-% This analysis might be okay if i correct for bias
-glme = fitglme(T, ...
-    'error ~ uncertaintyLevel * confidence + (1|uncertaintyLevel)', ...
-    'Distribution','Gamma', ...
-    'Link','log');
-
-disp(glme)
+% %% GLME
+% 
+% n_uncertainty_levels  = uncertainty_levels;
+% uncertainty_level_all = repmat((1:n_uncertainty_levels)', 1, size(resp_err_by_level, 2));
+% error                 = abs(resp_err_by_level(:)) ; %+ 1e-12;
+% uncertaintyLevel      = uncertainty_level_all(:);
+% confidence            = confidence_report_by_level(:);
+% T                     = table(error, uncertaintyLevel, confidence);
+% T.confidence          = categorical(T.confidence);  % HC vs LC
+% 
+% % This analysis might be okay if i correct for bias
+% glme = fitglme(T, ...
+%     'error ~ uncertaintyLevel * confidence + (1|uncertaintyLevel)', ...
+%     'Distribution','Gamma', ...
+%     'Link','log');
+% 
+% disp(glme)
 
 %% Get analytical solution
 anlytcl_sigma_m_stim = zeros(1, uncertainty_levels);
@@ -187,6 +188,7 @@ anlytcl_sigma_m_stim_LC = zeros(1, uncertainty_levels);
 for i=1:uncertainty_levels
     rvOriErr = -90:0.1:90;
     
+    modelParams.sigma_s             = sigma_s(i);
     modelParams.b                   = b(i);
     modelParams.a                   = a(i);
     modelParams.biasAmp             = biasAmp;
@@ -195,7 +197,7 @@ for i=1:uncertainty_levels
     modelParams.sigma_meta          = sigma_meta;
     modelParams.guessRate           = 0;
     
-    retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams);
+    retData = getPDFs_cov_reduced(modelParams);
     
     anlytcl_sigma_m_stim(i)    = retData.E_sigma_m;
     anlytcl_sigma_m_stim_HC(i) = retData.E_sigma_m_HC;
