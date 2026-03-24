@@ -1,6 +1,4 @@
-% Covarying noise
-
-function [retData] = getPDFs_cov_reduced(modelParams, optimizationFlag)
+function [retData] = getPDFs_v2(modelParams, optimizationFlag)
 
 if nargin < 2
     optimizationFlag = false;   % default value
@@ -24,27 +22,27 @@ end
 
 K                         = modelParams.K;
 rvOriErrs                 = -90:modelParams.oriErrBinWidth:90;
-sigma_s                   = modelParams.sigma_s;
-scale                     = modelParams.scale;
-Cc                        = modelParams.Cc;
+sigma_ext                 = modelParams.sigma_ext;
+scale                     = modelParams.scale; % Scale of gamma distribution should probably be constant (and not uncertainty level dependent). We want noise fluctuation to scale with mean noise level (this might not happen if it is level dependent)
 sigma_meta                = modelParams.sigma_meta;
+Cc                        = modelParams.Cc;
 guessRate                 = modelParams.guessRate;
 internalNoiseSamplesCnt   = modelParams.internalNoiseSamplesCnt; % 100 values is good enough (irrespctive of std of data)
 
+% Additive multiplicative noise
+% Stimulus external noise
+var_ext_noise = sigma_ext.^2; % 1
 
-% Internal noise covaries with sensory noise
-scaleParam = scale;
-shapeParams = sigma_s.^2 ./ scaleParam; 
-gammaSamples = zeros(numel(shapeParams), internalNoiseSamplesCnt);
+scaleParam   = scale; % assert that this is 1D
+shapeParam   = (sigma_ext.^2) ./ scaleParam;
+gammaSamples = gaminv(linspace(1/internalNoiseSamplesCnt, 1 - 1/internalNoiseSamplesCnt, internalNoiseSamplesCnt), ...
+    shapeParam, scaleParam);
 
-% Why loop? sigma_s is a scalar. Even with the loop doesn't matter though.
-for i = 1:numel(shapeParams)
-    shapeParam = shapeParams(i);
-    gammaSamples(i, :) = gaminv(linspace(1/internalNoiseSamplesCnt, 1 - 1/internalNoiseSamplesCnt, internalNoiseSamplesCnt), ...
-        shapeParam, scaleParam);
-end
+% Stimulus energy dependent sensory noise
+var_sen_noise = gammaSamples; % Measurement noise
 
-sigma_m = sqrt( gammaSamples ); % Measurement noise
+% Measurement noise (additive, multiplicative)
+sigma_m = sqrt( var_ext_noise + var_sen_noise );
 
 % For each value of sigma_m_stim, find the probability of high
 % confidence and low confidence. These probabilitites are
@@ -100,8 +98,6 @@ retData.rvOriErrs = rvOriErrs;
 retData.analyticalPDF = analyticalPDF;
 retData.analyticalPDF_LC = analyticalPDF_LC; % LC
 retData.analyticalPDF_HC = analyticalPDF_HC; % HC
-
-retData.analytical_sigma_s_reduced = sigma_s;
 
 end
 

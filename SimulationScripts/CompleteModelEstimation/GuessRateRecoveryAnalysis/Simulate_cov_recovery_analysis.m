@@ -79,11 +79,7 @@ for l=1:uncertainty_levels
         theta_est = mean_m_stim + sigma_m_stim .* randn(trials, 1);
         theta_est = mod(theta_est, 180); % Since this is orientation, wrap the angle between 0 and 180
         
-        % Simulat guess rate
-        guess_tl_idx = randi([1 trials], floor( trials*guessRate ), 1);
-        guessOris = 180*rand(numel(guess_tl_idx), 1);
-        theta_est(guess_tl_idx) = guessOris;
-
+       
         assert(numel(sigma_m_stim) == trials);
         
         % Step1: Subject first gets an estimate of its uncertainty
@@ -94,7 +90,21 @@ for l=1:uncertainty_levels
         
         % Confidence variable
         Vc = 1 ./ sigma_hat;
+        confReport = Vc > Cc;
+            
+        % Simulat guess rate (only for LC trials) => this is imp
+        lc_tl_idx = find(confReport == 0);   % indices of low-confidence trials
+
+        nLC = numel(lc_tl_idx);              % number of low-confidence trials
+        nGuess = floor(nLC * guessRate);     % how many guesses within LC
+        guess_subset = lc_tl_idx(randperm(nLC, nGuess)); % randomly pick subset of LC trials
+        guessOris = 180 * rand(nGuess, 1);   % generate random orientations
+        theta_est(guess_subset) = guessOris;
         
+        %guess_tl_idx = randi([1 trials], floor( trials*guessRate ), 1);
+        %guessOris = 180*rand(numel(guess_tl_idx), 1);
+        %theta_est(guess_tl_idx) = guessOris;
+    
         % Store
         theta_true_all(l, i, :)         = theta_true;
         theta_resp_all(l, i, :)         = theta_est;

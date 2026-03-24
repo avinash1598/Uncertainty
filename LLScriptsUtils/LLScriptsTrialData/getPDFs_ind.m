@@ -175,7 +175,6 @@ end
 %%
 % Stimulus dependent bias
 % retData.bias = biasAmp*sind(4*stimOris);
-retData.bias = bias;
 
 % PDF for each orientation
 retData.rvOriErrs = rvOriErrs;
@@ -188,6 +187,11 @@ retData.analyticalPDF_stim_HC = analyticalPDF_stim_HC; % HC
 retData.analyticalPDF    = analyticalPDF;
 retData.analyticalPDF_LC = analyticalPDF_LC; % LC
 retData.analyticalPDF_HC = analyticalPDF_HC; % HC
+
+retData.analytical_sigma_s_stim = sigma_s_stim;
+retData.bias = bias; 
+retData.analytical_bias = bias;
+retData.analytical_sigma_s_reduced = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 );
 
 end
 

@@ -143,19 +143,22 @@ a                = ori_scale.*b;
 % a                = 0.67.*b; %0.67   % Does a depend upon b? Yes
 biasAmp          = 0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
 % shape            = 2;
-scale            = 0.5;
-sigma_meta       = 0.6;
-Cc               = 0.5; 
-guessRate        = 0;
+scale            = 163.3809; %0.5;
+sigma_meta       = 9.7355; %0.6;
+Cc               = 0.0461; %0.5; 
+guessRate        = 0.38; %0.3808;
 
-sigma_s_stim          = b' + (ori_scale.*b)'*(abs(sind(orientations - 90)));
-bias                  = biasAmp*sind(2*orientations); 
-sigma_s_reduced_model = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 )';
+% sigma_s_stim          = b' + (ori_scale.*b)'*(abs(sind(orientations - 90)));
+% bias                  = biasAmp*sind(2*orientations); 
+% sigma_s_reduced_model = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 )';
+sigma_s_reduced_model = [12.0081 18.7643 19.3554 25.0146 32.1753 35.2552];
 
 modelParams = [sigma_s_reduced_model scale sigma_meta Cc guessRate];
 % modelParams = [b scale sigma_meta Cc guessRate ori_scale biasAmp];
 % modelParams = [b scale sigma_meta Cc guessRate a biasAmp];
-data        = GenerateCovData(modelParams, n_uncertainty_levels, 'reduced');
+
+%VV Imp: Remember to simulate guess rate only for low confidence trials
+data        = GenerateCovData(modelParams, n_uncertainty_levels, 'reduced', orientations, 24);
 
 initCond = getInitialConditions(data);
 
@@ -176,6 +179,7 @@ res.errBins = errBins;
 
 %%
 [~, idx] = min(result.f);
+
 
 % Display parameters
 for i=1:numel(modelParams)

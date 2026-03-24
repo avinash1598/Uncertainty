@@ -6,18 +6,18 @@ clear all
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
 
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR31.mat'); % Tien
-% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR33.mat'); % Akash
+data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR33.mat'); % Akash
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB01.mat'); % Yichao
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB02.mat');   % Jonathan
-data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB03.mat'); % David
+% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB03.mat'); % David
 
 % data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Stimuli/COR/Data/COR32.mat'); % Jiaming
 
 % formattedData = formatExpData(data);
 % fltData = data.dat( data.dat.session > 2, :); %data.dat;
 % fltData = data.dat( data.dat.session > 2, :); %data.dat;
-fltData = data.dat( data.dat.session > 1, :);
-fltData = fltData(fltData.stimContrast == 0.018 & fltData.stimDur == 0.3, :);
+fltData = data.dat( data.dat.session > 0, :);
+% fltData = fltData(fltData.stimContrast == 0.018 & fltData.stimDur == 0.3, :);
 f.dat = fltData; %data.dat; %fltData;
 % formattedData = formatExpData_SM(f, false, true); % wrt sample mean
 formattedData = formatExpData(f, false, true);

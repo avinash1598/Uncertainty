@@ -1,5 +1,9 @@
 % Loss function for optimization
-function nll = computeNLLCov(params, metaData, fitType)
+function nll = computeNLLCov(params, metaData, fitType, optimizationFlag)
+
+if nargin < 4
+    optimizationFlag = true;
+end
 
 nLevels = metaData.n_levels;
 
@@ -117,17 +121,25 @@ for i=1:nLevels
             trlErrors(idxLC), ...
             'linear');
         trial_probs_Conf(idxLC) = retData.pLC; % Mutually exclusive from LC
-    
+        
     end
 
 end
 
 % NLL loss
-ll_HC = log( trial_probs_HC .* trial_probs_Conf + eps); % P(ERR/HC)*P(HC) or P(ERR/LC)*P(LC)
-ll_LC = log( trial_probs_LC .* trial_probs_Conf + eps);
+% P(err|trial) = P(err|trial, confreport)*P(confreport|trial)
+ll_HC = log( trial_probs_HC .* trial_probs_Conf + eps); % P(ERR|HC)*P(HC)
+ll_LC = log( trial_probs_LC .* trial_probs_Conf + eps); % P(ERR|LC)*P(LC)
 ll    = log( trial_probs + eps ); 
 
-nll = ( ll_HC + ll_LC); %ll + 
-nll = - sum(nll(:));
+% ll_HC and ll_LC intersection should be zero. Or is it?
+
+nll = ( ll_HC + ll_LC); %ll +  % Summation of log => correct thing to do
+
+if ~optimizationFlag
+    nll = - nll(:); % NLL for each trial
+else
+    nll = - sum(nll(:)); % Aggregate NLL of all trials
+end
 
 end

@@ -1,5 +1,9 @@
 % Loss function for optimization
-function nll = computeNLL(params, metaData, fitType)
+function nll = computeNLL(params, metaData, fitType, optimizationFlag)
+
+if nargin < 4
+    optimizationFlag = true;
+end
 
 nLevels = metaData.n_levels;
 
@@ -125,6 +129,12 @@ ll_LC = log( trial_probs_LC .* trial_probs_Conf + eps);
 ll    = log( trial_probs + eps ); 
 
 nll = ( ll_HC + ll_LC); %ll + 
-nll = - sum(nll(:));
+
+if ~optimizationFlag
+    nll = - nll(:); % NLL for each trial
+else
+    nll = - sum(nll(:)); % Aggregate NLL of all trials
+end
+
 
 end

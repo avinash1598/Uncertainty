@@ -1,6 +1,9 @@
 close all
 clear all
 
+warning("Make sure generative model is correct. While generating simulated " + ...
+    "data guess rate should only be used for low confidence reports.")
+
 % addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
 % addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/LLScriptsTrialData/')
 % addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')

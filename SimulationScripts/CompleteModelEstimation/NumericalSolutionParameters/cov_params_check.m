@@ -187,10 +187,11 @@ for i=1:uncertainty_levels
             
             retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams, true);
     
+            % USe likelihood instead. RMSE error might be misleading
             err = (pdf - retData.analyticalPDF).^2 + ...
                 (pdfHC - retData.analyticalPDF_HC).^2 + ...
                 (pdfLC - retData.analyticalPDF_LC).^2;
-    
+            
             errors(i, k, j) = mean( err(:) );
         end
     end

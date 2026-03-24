@@ -5,8 +5,10 @@ function retData = formatExpData(data, debias, sortByMAD)
 % TODO: Also return bias corrected bhv errors
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% TODO: remove error bias. Assuming bias does not depend upon uncertainty
+% Load stimulus energy details
+StimEnergyTable = readtable('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/stimulus_energy.csv');
 
+% TODO: remove error bias. Assuming bias does not depend upon uncertainty
 stimOris       = data.dat.stimOri;
 orientations   = unique(stimOris);
 n_orientations = numel(orientations);
@@ -132,6 +134,17 @@ for i=1:n_uncertainty_levels
     end
 end
 
+% Get stimulus energy
+stimulusEnergy = zeros(n_uncertainty_levels, 1);
+for k=1:n_uncertainty_levels
+    row = StimEnergyTable(StimEnergyTable.Contrast==uncertaintyVals(k, 1) & ...
+        StimEnergyTable.Spread == uncertaintyVals(k, 2) & ...
+        StimEnergyTable.Duration==uncertaintyVals(k, 3), :);
+    assert(numel(row.Contrast) == 1);
+    stimulusEnergy(k) = row.NormalizedSpectralEnergy(1);
+end
+
+retData.stimulusEnergy        = stimulusEnergy;
 retData.uncertaintyVals       = uncertaintyVals;
 retData.n_uncertainty_levels  = n_uncertainty_levels;
 retData.theta_true_all        = theta_true_all;

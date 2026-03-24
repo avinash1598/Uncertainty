@@ -1,0 +1,1 @@
+AMN: Additive multiplicative model (Additive external noise, multiplicative internal noise)

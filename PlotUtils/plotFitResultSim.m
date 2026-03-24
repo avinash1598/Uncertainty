@@ -1,4 +1,4 @@
-function plotFitResult(data, modelParams, initCond, modelType, fitType, errBins)
+function plotFitResultSim(data, modelParams, initCond, modelType, fitType, errBins)
 
 % modelType = cov, ind
 % fitType   = reduced, full, full_jumbo
@@ -180,11 +180,7 @@ for i=1:n_uncertainty_levels
     %xline(0, LineStyle="--"); Probalamatic line
     xlabel("Error (deg)");
     ylabel("P( Err / LC )");
-    title(sprintf("C: %.2f, S: %d, D: %.2f",  ...
-        data.uncertaintyVals(idx, 1), ...
-        data.uncertaintyVals(idx, 2), ...
-        data.uncertaintyVals(idx, 3)))
-    
+    title(sprintf("Uncertainty Level: %d",  i))    
     legend;
     
     subplot(2, n_uncertainty_levels, n_uncertainty_levels + i);
@@ -226,10 +222,7 @@ for i=1:n_uncertainty_levels
     %xline(0, LineStyle="--"); Probalamatic line
     xlabel("Error (deg)");
     ylabel("P( Err )");
-    title(sprintf("C: %.2f, S: %d, D: %.2f",  ...
-        data.uncertaintyVals(idx, 1), ...
-        data.uncertaintyVals(idx, 2), ...
-        data.uncertaintyVals(idx, 3)))
+    title(sprintf("Uncertainty Level: %d",  i))  
 
     legend;
     hold off;
@@ -365,11 +358,11 @@ if fitType == "full" || fitType == "full_jumbo"
         %plot( orientations, b_est + a_est*abs(sind(2*orientations)), LineWidth=1.5, DisplayName="fit")
         scatter(orientations, stdByOri(i, :))
         plot(orientations, anlytcl_sigma_m_stim(i, :), LineWidth=1.5, DisplayName="fit")
+        xlabel("orientation")
+        ylabel("\sigma_m")
         % scatter(orientations, madByOri(i, :))
         % ylim([0 60])
         hold off
-        xlabel("orientation")
-        ylabel("\sigma_m")
     end
     
     % Bias
@@ -386,7 +379,7 @@ if fitType == "full" || fitType == "full_jumbo"
     hold off
     xlabel("orientation")
     ylabel("Mean Err")
-
+    
 end
 
 end

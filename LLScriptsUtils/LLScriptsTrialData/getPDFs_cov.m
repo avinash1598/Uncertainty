@@ -15,7 +15,7 @@ end
 
 % Precision of orientation error bins
 if ~isfield(modelParams, 'oriErrBinWidth')
-    modelParams.oriErrBinWidth = 2; % Default value obtained from params check analysis
+    modelParams.oriErrBinWidth = 2; %2; % Default value obtained from params check analysis
 end
 
 % Controls wrapped gaussian distribution
@@ -179,7 +179,6 @@ end
 %%
 % Stimulus dependent bias
 % retData.bias = biasAmp*sind(2*stimOris);
-retData.bias = bias; %biasAmp*sind(2*stimOris);
 
 % PDF for each orientation
 retData.rvOriErrs = rvOriErrs;
@@ -192,6 +191,11 @@ retData.analyticalPDF_stim_HC = analyticalPDF_stim_HC; % HC
 retData.analyticalPDF = analyticalPDF;
 retData.analyticalPDF_LC = analyticalPDF_LC; % LC
 retData.analyticalPDF_HC = analyticalPDF_HC; % HC
+
+retData.analytical_sigma_s_stim = sigma_s_stim;
+retData.bias = bias; 
+retData.analytical_bias = bias;
+retData.analytical_sigma_s_reduced = sqrt( mean( sigma_s_stim.^2, 2 ) + std(bias).^2 );
 
 % this is sending a lot of information
 end
@@ -235,13 +239,16 @@ end
 % PDF
 pdf = pdf ./ trapz(x,pdf);
 pdf = (1 - guessRate)*pdf + guessRate*pdfRG;
+% pdf = pdf ./ trapz(x,pdf);
 
 % HC
 pdfHC = pdfHC ./ trapz(x,pdfHC);
+% pdfHC = (1 - guessRate)*pdfHC + guessRate*pdfRG;
 
 % LC
 pdfLC = pdfLC ./ trapz(x,pdfLC);
 pdfLC = (1 - guessRate)*pdfLC + guessRate*pdfRG;
+% pdfLC = pdfLC ./ trapz(x,pdfLC);
 
 % % Truncated gaussian - don't use it
 % Z = x - bias; % this can push things outside of -90 to 90 range

@@ -94,6 +94,8 @@ retData.analyticalPDF = analyticalPDF;
 retData.analyticalPDF_LC = analyticalPDF_LC; % LC
 retData.analyticalPDF_HC = analyticalPDF_HC; % HC
 
+retData.analytical_sigma_s_reduced = sigma_s;
+
 % keyboard
 
 end
