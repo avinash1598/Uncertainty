@@ -167,11 +167,11 @@ else
     nParams = nan;
 end
 
-% % Start pool only if none exists
-% p = gcp('nocreate');   
-% if isempty(p)
-%     parpool;           
-% end
+% Start pool only if none exists
+p = gcp('nocreate');   
+if isempty(p)
+    parpool;           
+end
 
 x_all = zeros(nStarts,nParams);
 f_all = zeros(nStarts,1);
@@ -181,8 +181,8 @@ b       = initCond.b;
 a       = initCond.a;
 biasAmp = initCond.biasAmp;
 
-% parfor itr = 1:nStarts
-for itr = 1:nStarts
+parfor itr = 1:nStarts
+%for itr = 1:nStarts
 
     fprintf( 'optimization itr: %d \n', itr) 
     success = false;
