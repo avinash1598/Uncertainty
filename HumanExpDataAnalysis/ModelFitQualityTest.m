@@ -27,15 +27,15 @@ addpath('C:\Users\avinash1598\Desktop\Uncertainty\SimulationScripts\CompleteMode
 % addpath('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis\Utils\')
 
 %expData            = load('./Data/COR33.mat');  % Akash
-expData            = load('./Data/COR31.mat');   % Tien
+% expData            = load('./Data/COR31.mat');   % Tien
 % expData            = load('./Data/COR32.mat');   % Jiaming
 % expData            = load('./Data/CORNFB02.mat');% Jonathan
-% expData            = load('Data\CORNFB01.mat');  % Yichao
+expData            = load('.\Data\CORNFB01.mat');  % Yichao
 % For subject 6 => David: make sure to change the orientation dependent
 % error
 
 fltSessionIdx = [0, 0, 0, 0, 2, 1];
-fltData       = expData.dat( expData.dat.session > 0 , :);  % TODO: change session number
+fltData       = expData.dat( expData.dat.session > 1 , :);  % TODO: change session number
 f.dat         = fltData;
 formattedData = formatExpData(f, false, false); % no de-baising, work with raw errors
 
@@ -150,4 +150,4 @@ dataToSave.resultReducedIndSim   = resultReducedIndSim;
 dataToSave.resultFullIndSim      = resultFullIndSim;
 dataToSave.resultFullJumboIndSim = resultFullJumboIndSim;
 
-save('ModelFitQualityTest_Tien.mat', "dataToSave");
+save('ModelFitQualityTest_Yichao.mat', "dataToSave");
