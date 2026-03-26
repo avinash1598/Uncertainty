@@ -33,7 +33,7 @@ keysSim = ["resultReducedCovSim", ...
            "resultFullJumboIndSim"];
 
 % BinEdges = 11.1:0.01:11.5;
-BinEdges = 7.1e4:20:7.3e4;
+BinEdges = 7.1e4:20:7.17e4;
 
 % IS the fit quality bad (6 plots)?
 % Plot cov (3 plots), Ind (3 plots)
