@@ -6,19 +6,19 @@ restoredefaultpath
 warning("Make sure generative model is correct. While generating simulated " + ...
     "data guess rate should only be used for low confidence reports.")
 
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/LLScriptsModel_v4/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/OptimizationScripts_v4/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/SimulationScripts/CompleteModelEstimation/GenerateSimulatedData')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/LLScriptsModel_v4/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/OptimizationScripts_v4/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/SimulationScripts/CompleteModelEstimation/GenerateSimulatedData')
 
-% addpath('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis\Utils\')
-% addpath('C:\Users\avinash1598\Desktop\Uncertainty\LLScriptsUtils\LLScriptsModel_v4\')
-% addpath('C:\Users\avinash1598\Desktop\Uncertainty\PlotUtils\')
-% addpath('C:\Users\avinash1598\Desktop\Uncertainty\Utils\')
-% addpath('C:\Users\avinash1598\Desktop\Uncertainty\OptimizationScripts_v4\')
-% addpath('C:\Users\avinash1598\Desktop\Uncertainty\SimulationScripts\CompleteModelEstimation\GenerateSimulatedData')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis\Utils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\LLScriptsUtils\LLScriptsModel_v4\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\PlotUtils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\Utils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\OptimizationUtils\OptimizationScripts_v4\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\SimulationScripts\CompleteModelEstimation\GenerateSimulatedData')
 
 % addpath('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis/Utils\')
 % addpath('C:\Users\avinash1598\Desktop\Uncertainty\LLScriptsUtils\LLScriptsTrialData\')
@@ -27,8 +27,8 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 % addpath('C:\Users\avinash1598\Desktop\Uncertainty\OptimizationUtils\')
 % addpath('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis\Utils\')
 
-expData            = load('./Data/COR33.mat');     % Akash
-% expData            = load('./Data/COR31.mat');   % Tien
+% expData            = load('./Data/COR33.mat');     % Akash
+expData            = load('./Data/COR31.mat');   % Tien
 % expData            = load('./Data/COR32.mat');   % Jiaming
 % expData            = load('./Data/CORNFB02.mat');% Jonathan
 % expData            = load('Data\CORNFB01.mat');  % Yichao
@@ -46,10 +46,10 @@ n_uncertainty_levels = formattedData.n_uncertainty_levels; % Hard code for now
 %% Ind + Cov model (Full)
 
 % ----------------------------------------
-optParams.nStarts = 200; %300;
+optParams.nStarts = 150; %300;
 result = Optimize(formattedData, initCond, [], optParams);
 
 %% Data structures to save
 dataToSave.result   = result;
 
-save('./Data/ModelFitQualityTest_Akash_v4.mat', "dataToSave");
+save('./Data/ModelFitQualityTest_Tien_v4.mat', "dataToSave");
