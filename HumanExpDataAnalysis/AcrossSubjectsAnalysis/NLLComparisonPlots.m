@@ -1,0 +1,197 @@
+restoredefaultpath
+close all
+clear all
+
+% get(groot,"default")
+set(groot, ...
+    'defaultFigureColor','w', ...
+    'defaultAxesFontSize',10, ...
+    'defaultAxesLineWidth',1, ...
+    'defaultAxesBox','off', ...
+    'defaultAxesTickDir','out', ...
+    'defaultLineLineWidth',1.5, ...
+    'defaultAxesLabelFontSizeMultiplier',1.1, ...
+    'defaultAxesTitleFontWeight','normal', ...
+    'defaultLegendBox','off');
+
+
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
+
+% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR31.mat'); % Tien
+% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR33.mat'); % Akash
+% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB01.mat'); % Yichao
+% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB02.mat');   % Jonathan
+data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB03.mat'); % David
+
+subjectName = ["Tien", ...
+    "Akash", ...
+    "Jonathan"
+     ]; %" "Yichao"
+
+dataFileNames = ["COR31.mat" "COR33.mat" "CORNFB01.mat" "CORNFB02.mat" ]; % "CORNFB03.mat"
+fltSessionIdx = [0, 0, 0, 0, 2, 1];
+
+
+figure
+
+% Simulation vs data NLL comparison (Full Model)
+for fIdx=1:numel(subjectName)
+
+    % Cov
+    data = load("../Data/ModelFitQualityTest_" +  subjectName(fIdx) + ".mat");
+    
+    fvals    = ( data.dataToSave.resultFullCov.f );
+    fvalsSim = ( data.dataToSave.resultFullCovSim.f );
+    
+    top100 = sort(fvals, 'ascend'); top100 = top100(1:100); fvals = top100;
+    top100 = sort(fvalsSim, 'ascend'); top100 = top100(1:100); fvalsSim = top100;
+    
+    subplot(4, 4, fIdx)
+    hold on
+    histogram(fvals,  'BinWidth', 2, DisplayName="Human data"); %BinEdges,
+    histogram(fvalsSim,  'BinWidth', 2, DisplayName="Simulation");
+    %xlabel("fvals (log)")
+    xlabel("NLL")
+    ylabel("count")
+    title(sprintf("Cov model Full (Subject: %d)", fIdx))
+    legend
+    hold off
+    
+    % p = ranksum(fvals, fvalsSim)
+    ax = gca;
+    ax.XAxis.Exponent = 0;
+    ax.XTickMode = 'auto';
+    ax.XTickLabelMode = 'auto';
+    
+    % AIC/BIC
+    n = 1728;        % number of trials
+    k_cov = size( data.dataToSave.resultFullCov.x , 2); %12; % parameters (Cov model)
+    k_cov_sim = size( data.dataToSave.resultFullCovSim.x , 2);      % parameters (Ind model)
+    nll_cov = fvals;
+    nll_cov_sim = fvalsSim;
+    [delAIC, delBIC] = computeAIC_BIC(nll_cov_sim, nll_cov, k_cov_sim, k_cov, n);
+    
+    subplot(4,4,fIdx+4); hold on;
+    histogram(delAIC, 'BinWidth', 2, 'DisplayName',' delta AIC');
+    histogram(delBIC, 'BinWidth', 2, 'DisplayName','delta BIC');
+    xlabel("delta (Sim - Data)")
+    title(sprintf("Model comparison Cov (Subject: %d)", fIdx))
+    legend;
+    xline(0, LineStyle="--")
+    xlim([-100 100])
+    
+
+    % Ind
+    fvals    = ( data.dataToSave.resultFullInd.f );
+    fvalsSim = ( data.dataToSave.resultFullIndSim.f );
+    
+    top100 = sort(fvals, 'ascend'); top100 = top100(1:100); fvals = top100;
+    top100 = sort(fvalsSim, 'ascend'); top100 = top100(1:100); fvalsSim = top100;
+    
+    subplot(4, 4, 4 + 4 + fIdx)
+    hold on
+    histogram(fvals,  'BinWidth', 2, DisplayName="Human data"); %BinEdges,
+    histogram(fvalsSim,  'BinWidth', 2, DisplayName="Simulation");
+    %xlabel("fvals (log)")
+    xlabel("NLL")
+    ylabel("count")
+    title(sprintf("Ind model Full (Subject: %d)", fIdx))
+    legend
+    hold off
+    
+    % p = ranksum(fvals, fvalsSim)
+    ax = gca;
+    ax.XAxis.Exponent = 0;
+    ax.XTickMode = 'auto';
+    ax.XTickLabelMode = 'auto';
+
+    % AIC/BIC
+    n = 1728;                                                   % number of trials
+    k_ind = size( data.dataToSave.resultFullInd.x , 2); %12;    % parameters (Cov model)
+    k_ind_sim = size( data.dataToSave.resultFullIndSim.x , 2);  % parameters (Ind model)
+    nll_ind = fvals;
+    nll_ind_sim = fvalsSim;
+    [delAIC, delBIC] = computeAIC_BIC(nll_ind_sim, nll_ind, k_ind_sim, k_ind, n);
+    
+    subplot(4,4,fIdx+4+4+4); hold on;
+    histogram(delAIC, 'BinWidth', 2, 'DisplayName',' delta AIC');
+    histogram(delBIC, 'BinWidth', 2, 'DisplayName','delta BIC');
+    xlabel("delta (Sim - Data)")
+    title(sprintf("Model comparison Ind (Subject: %d)", fIdx))
+    legend;
+    xline(0, LineStyle="--")
+    xlim([-100 100])
+end
+
+figure
+
+% Simulation vs data NLL comparison (Full Model)
+for fIdx=1:numel(subjectName)
+
+    % TODO: add add+mult as well
+
+    data = load("../Data/ModelFitQualityTest_" +  subjectName(fIdx) + ".mat");
+    
+    fvalsCov    = ( data.dataToSave.resultFullCov.f );
+    fvalsInd = ( data.dataToSave.resultFullInd.f );
+    
+    top100 = sort(fvalsCov, 'ascend'); top100 = top100(1:100); fvalsCov = top100;
+    top100 = sort(fvalsInd, 'ascend'); top100 = top100(1:100); fvalsInd = top100;
+    
+    subplot(3, 4, fIdx)
+    hold on
+    histogram(fvalsCov,  'BinWidth', 2, DisplayName="Cov (Full)"); %BinEdges,
+    histogram(fvalsInd,  'BinWidth', 2, DisplayName="Ind (Full)");
+    %xlabel("fvals (log)")
+    xlabel("NLL")
+    ylabel("count")
+    title(sprintf("Model comparison (Subject: %d)", fIdx))
+    legend
+    hold off
+    
+    % p = ranksum(fvals, fvalsSim)
+    ax = gca;
+    ax.XAxis.Exponent = 0;
+    ax.XTickMode = 'auto';
+    ax.XTickLabelMode = 'auto';
+
+
+    % AIC/BIC
+    fvalsCov = data.dataToSave.resultFullCov.f;
+    fvalsInd = data.dataToSave.resultFullInd.f;
+    top100 = sort(fvalsCov, 'ascend'); top100 = top100(1:100); fvalsCov = top100;
+    top100 = sort(fvalsInd, 'ascend'); top100 = top100(1:100); fvalsInd = top100;
+    
+    n = 1728;        % number of trials
+    k_cov = size( data.dataToSave.resultFullCov.x , 2); %12; % parameters (Cov model)
+    k_ind = size( data.dataToSave.resultFullInd.x , 2);      % parameters (Ind model)
+    nll_cov = fvalsCov;
+    nll_ind = fvalsInd;
+    [delAIC, delBIC] = computeAIC_BIC(nll_cov, nll_ind, k_cov, k_ind, n);
+    
+    subplot(3,4,fIdx+4); hold on;
+    histogram(delAIC, 'BinWidth', 2, 'DisplayName',' delta AIC');
+    histogram(delBIC, 'BinWidth', 2, 'DisplayName','delta BIC');
+    xlabel("delta (Cov - Ind)")
+    title(sprintf("Model comparison (Subject: %d)", fIdx))
+    legend;
+    xline(0, LineStyle="--")
+    
+end
+
+
+
+function [delAIC, delBIC] = computeAIC_BIC(nll1, nll2, k1, k2, n)
+
+% AIC
+AIC_1 = 2*k1 + 2*nll1;
+AIC_2 = 2*k2 + 2*nll2;
+
+% BIC
+BIC_1 = k1*log(n) + 2*nll1;
+BIC_2 = k2*log(n) + 2*nll2;
+
+delAIC = AIC_1 - AIC_2;
+delBIC = BIC_1 - BIC_2;
+
+end
