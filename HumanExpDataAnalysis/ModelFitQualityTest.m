@@ -34,8 +34,8 @@ expData            = load('.\Data\CORNFB01.mat');  % Yichao
 % For subject 6 => David: make sure to change the orientation dependent
 % error
 
-fltSessionIdx = [0, 0, 0, 0, 2, 1];
-fltData       = expData.dat( expData.dat.session > 1 , :);  % TODO: change session number
+fltSessionIdx = [0, 0, 0, 0, 2, 1]; % Last one is for David
+fltData       = expData.dat( expData.dat.session > 0 , :);  % TODO: change session number
 f.dat         = fltData;
 formattedData = formatExpData(f, false, false); % no de-baising, work with raw errors
 
