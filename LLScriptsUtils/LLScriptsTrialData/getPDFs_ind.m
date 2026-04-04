@@ -1,5 +1,7 @@
 function [retData] = getPDFs_ind(stimVals, modelParams, optimizationFlag)
 
+warning("Deprecated. Use LLScriptsNoBin instead.")
+
 % warning("Deprecated")
 if nargin < 3
     optimizationFlag = false;   % default value

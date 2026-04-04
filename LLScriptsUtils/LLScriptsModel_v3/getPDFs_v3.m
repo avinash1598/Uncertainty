@@ -156,6 +156,7 @@ for k = -K:K
 end
 
 % PDF
+% This might not be fully right
 pdf = pdf ./ trapz(x,pdf);
 pdf = (1 - guessRate)*pdf + guessRate*pdf_random_guesses;
 

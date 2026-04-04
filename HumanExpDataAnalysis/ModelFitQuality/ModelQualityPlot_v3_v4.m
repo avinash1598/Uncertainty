@@ -29,11 +29,11 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 % addpath('C:\Users\avinash1598\Desktop\Uncertainty\OptimizationUtils\')
 % addpath('C:\Users\avinash1598\Desktop\Uncertainty\SimulationScripts\CompleteModelEstimation\GenerateSimulatedData')
 
-expData            = load('./Data/COR33.mat');     % Akash
-% expData            = load('./Data/COR31.mat');   % Tien
-% expData            = load('./Data/COR32.mat');   % Jiaming
-% expData            = load('./Data/CORNFB02.mat');% Jonathan
-% expData            = load('Data\CORNFB01.mat');  % Yichao
+expData            = load('../Data/COR33.mat');     % Akash
+% expData            = load('../Data/COR31.mat');   % Tien
+% expData            = load('../Data/COR32.mat');   % Jiaming
+% expData            = load('../Data/CORNFB02.mat');% Jonathan
+% expData            = load('../Data/CORNFB01.mat');  % Yichao
 % For subject 6 => David: make sure to change the orientation dependent
 % error
 
@@ -47,15 +47,18 @@ initCond      = getInitialConditions(formattedData);
 n_uncertainty_levels = formattedData.n_uncertainty_levels; % Hard code for now
 
 %%
-d1 = load('./Data/ModelFitQualityTest_Akash.mat');
-d2 = load('./Data/ModelFitQualityTest_Akash_v3.mat');
-d3 = load('./Data/ModelFitQualityTest_Akash_v4.mat');
-% d1 = load('./Data/ModelFitQualityTest_Jonathan.mat');
-% d2 = load('./Data/ModelFitQualityTest_Jonathan_v3.mat');
-% d3 = load('./Data/ModelFitQualityTest_Jonathan_v3.mat');
-% d1 = load('./Data/ModelFitQualityTest_Tien.mat');
-% d2 = load('./Data/ModelFitQualityTest_Tien_v3.mat');
-% d3 = load('./Data/ModelFitQualityTest_Tien_v3.mat'); % To avoid error for now
+d1 = load('../Data/ModelFitQualityTest_Akash.mat');
+d2 = load('../Data/ModelFitQualityTest_Akash_v3.mat');
+d3 = load('../Data/ModelFitQualityTest_Akash_v4.mat');
+% d1 = load('../Data/ModelFitQualityTest_Jonathan.mat');
+% d2 = load('../Data/ModelFitQualityTest_Jonathan_v3.mat');
+% d3 = load('../Data/ModelFitQualityTest_Jonathan_v4.mat');
+% d1 = load('../Data/ModelFitQualityTest_Tien.mat');
+% d2 = load('../Data/ModelFitQualityTest_Tien_v3.mat');
+% d3 = load('../Data/ModelFitQualityTest_Tien_v4.mat'); % To avoid error for now
+% d1 = load('../Data/ModelFitQualityTest_Yichao.mat');
+% d2 = load('../Data/ModelFitQualityTest_Yichao_v4.mat');
+% d3 = load('../Data/ModelFitQualityTest_Yichao_v4.mat');
 
 plotFitQuality_v3_v4(formattedData, d1.dataToSave, d2.dataToSave, d3.dataToSave)
 

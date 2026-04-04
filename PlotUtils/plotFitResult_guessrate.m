@@ -107,17 +107,17 @@ for i=1:n_uncertainty_levels
         mP.shape = param_shape;
 
         if fullModel
-            analyticalSol = getEstimatesPDFs(orientations, mP, false);
+            analyticalSol = getPDFs_ind(orientations, mP, false);
         else
-            analyticalSol = getEstimatesPDFs_reduced_model(errBins, mP, false);
+            analyticalSol = getPDFs_ind_reduced(errBins, mP, false);
         end
     
     elseif modelType == "cov"
         
         if fullModel
-            analyticalSol = getEstimationsPDF_cov(orientations, mP, false);
+            analyticalSol = getPDFs_cov(orientations, mP, false);
         else
-            analyticalSol = getEstimationsPDF_cov_reduced(errBins, mP, false);
+            analyticalSol = getPDFs_cov_reduced(errBins, mP, false);
         end
     end
     

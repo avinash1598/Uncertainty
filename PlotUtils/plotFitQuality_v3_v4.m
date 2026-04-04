@@ -33,9 +33,10 @@ keysSim = ["resultReducedCovSim", ...
            "resultFullJumboIndSim"];
 
 % BinEdges = 11.1:0.01:11.5;
-% BinEdges = 7.105e4:2:7.13e4; % Akash
-BinEdges = 7.1e4:2:7.14e4; % Jonathan
-% BinEdges = 7.1e4:2:7.12e4; % Tien
+BinEdges = 7.105e4:2:7.12e4; % Akash
+% BinEdges = 7.09e4:2:7.14e4; % Jonathan
+% BinEdges = 7.1e4:2:7.11e4; % Tien
+% BinEdges = 7.08e4:2:7.113e4; % Yichao
 
 % IS the fit quality bad (6 plots)?
 % Plot cov (3 plots), Ind (3 plots)
@@ -165,11 +166,16 @@ ax.XTickLabelMode = 'auto';
 
 %% AIC BIC for ADD+MULT Model
 
+f1 = fitData1.resultReducedCov.f;
+f2 = fitData3.result.f;
+top100 = sort(f1, 'ascend'); top100 = top100(1:100); f1 = top100;
+top100 = sort(f2, 'ascend'); top100 = top100(1:100); f2 = top100;
+    
 n = 1728;        % number of trials
 k_cov = 10;      % parameters (Cov model)
 k_add_mult = 18; %16;      % parameters (Ind model)
-nll_cov = fitData1.resultReducedCov.f;
-nll_add_mult = fitData3.result.f; % fitData2.result.f;
+nll_cov = f1;
+nll_add_mult = f2; % fitData2.result.f;
 [delAIC, delBIC] = computeAIC_BIC(nll_add_mult, nll_cov, k_add_mult, k_cov, n);
 
 subplot(3,3,7); hold on;
@@ -186,11 +192,16 @@ ax.XAxis.Exponent = 0;
 ax.XTickMode = 'auto';
 ax.XTickLabelMode = 'auto';
 
+f1 = fitData1.resultFullCov.f;
+f2 = fitData3.result.f;
+top100 = sort(f1, 'ascend'); top100 = top100(1:100); f1 = top100;
+top100 = sort(f2, 'ascend'); top100 = top100(1:100); f2 = top100;
+ 
 n = 1728;        % number of trials
 k_cov = 12;      % parameters (Cov model)
 k_add_mult = 18;  %16    % parameters (Ind model)
-nll_cov = fitData1.resultFullCov.f;
-nll_add_mult = fitData3.result.f; % fitData2.result.f;
+nll_cov = f1;
+nll_add_mult = f2; % fitData2.result.f;
 [delAIC, delBIC] = computeAIC_BIC(nll_add_mult, nll_cov, k_add_mult, k_cov, n);
 
 subplot(3,3,8); hold on;
@@ -200,17 +211,25 @@ xlabel("delta (ADD+MULT - COV)")
 title('Full Model');
 legend;
 xline(0, LineStyle="--")
+% xlim([-300, 300])
 
 ax = gca;
 ax.XAxis.Exponent = 0;
 ax.XTickMode = 'auto';
 ax.XTickLabelMode = 'auto';
 
+
+f1 = fitData1.resultFullJumboCov.f;
+f2 = fitData3.result.f;
+top100 = sort(f1, 'ascend'); top100 = top100(1:100); f1 = top100;
+top100 = sort(f2, 'ascend'); top100 = top100(1:100); f2 = top100;
+assert(size(fitData1.resultFullJumboCov.x, 2) == 17)
+assert(size(fitData3.result.x, 2) == 18)
 n = 1728;        % number of trials
 k_cov = 17;      % parameters (Cov model)
 k_add_mult = 18; %16      % parameters (Ind model)
-nll_cov = fitData1.resultFullJumboCov.f;
-nll_add_mult = fitData3.result.f; %fitData2.result.f;
+nll_cov = f1;
+nll_add_mult = f2; %fitData2.result.f;
 [delAIC, delBIC] = computeAIC_BIC(nll_add_mult, nll_cov, k_add_mult, k_cov, n);
 
 subplot(3,3,9); hold on;
@@ -220,6 +239,7 @@ xlabel("delta (ADD+MULT - COV)")
 title('Full Jumbo Model');
 legend;
 xline(0, LineStyle="--")
+% xlim([-300, 300])
 
 ax = gca;
 ax.XAxis.Exponent = 0;

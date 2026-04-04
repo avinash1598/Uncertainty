@@ -1,0 +1,125 @@
+close all
+clear all
+
+% addpath('C:\Users\avinash1598\Desktop\Uncertainty\ProcessModel\HumanExpDataAnalysis\Utils\')
+% addpath('C:\Users\avinash1598\Desktop\Uncertainty\Uncertainty\ProcessModel\LLScriptsUtils\')
+% addpath('C:\Users\avinash1598\Desktop\Uncertainty\ProcessModel\PlotUtils\')
+% addpath('C:\Users\avinash1598\Desktop\Uncertainty\ProcessModel\Utils\')
+% addpath('C:\Users\avinash1598\Desktop\Uncertainty\ProcessModel\OptimizationUtils\')
+% addpath('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis\Utils\')
+
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/LLScriptsNoBin/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/OptimizationScriptsNoBin')
+addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/SimulationScripts/CompleteModelEstimation/GenerateSimulatedData')
+
+% expData            = load('../Data/COR33.mat');    % Akash
+% expData            = load('../Data/COR31.mat');    % Tien
+% expData            = load('./Data/COR32.mat');     % Jiaming
+expData            = load('../Data/CORNFB02.mat');  % Jonathan
+% expData            = load('../Data/CORNFB01.mat'); % Yichao
+
+fltData       = expData.dat( expData.dat.session > 2 , :);  % TODO: change session number
+f.dat         = fltData;
+formattedData = formatExpData(f, false, false); % no de-baising, work with raw errors
+
+initCond             = getInitialConditions(formattedData);
+n_uncertainty_levels = formattedData.n_uncertainty_levels;
+
+%% Cross-validate
+optParams.nStarts = 30;
+K = 5; % K-fold
+nPerm = 6; % no of data permutation
+cv_result = NLLCrossValidate(formattedData, initCond, K, nPerm, optParams);
+save('./CV_Data/cross_validation_Jonathan_full.mat', 'cv_result');
+
+% %% NLL on test data
+% 
+% % load('./CV_Data/cross_validation_tien.mat', 'cv_result');
+% errBins   = -90:1:90;
+% optParams.nStarts = 30;
+% optParams.hyperParamC1 = 0;
+% optParams.hyperParamC2 = 0;
+% optParams.randomGuessModel = true;
+% 
+% nllData = computeNLL_CV(formattedData, errBins, cv_result, optParams, 'reduced');
+% 
+% % remove SD from the data and then see what happens
+% 
+% %
+% figure
+% subplot(2, 2, 1)
+% hold on
+% histogram(nllData.nllCovModel/100, DisplayName='cov model')
+% histogram(nllData.nllIndModel/100, DisplayName='ind model')
+% hold off
+% ylabel("Count")
+% xlabel("NLL")
+% legend
+% title("Fit on test data")
+% 
+% subplot(2, 2, 2)
+% histogram(nllData.deltaNLL) 
+% ylabel("Count")
+% xlabel("delta NLL (cov - ind)")
+% legend
+% title("Fit on test data")
+% 
+% subplot(2, 2, 3)
+% hold on
+% bins = 0:30:300;
+% histogram(nllData.fvalsCov/100, DisplayName='cov model')
+% histogram(nllData.fvalsInd/100, DisplayName='ind model')
+% hold off
+% ylabel("Count")
+% xlabel("NLL")
+% legend
+% title("fvals (train dataset)")
+% 
+% subplot(2, 2, 4)
+% hold on
+% bins = 0:30:300;
+% histogram(nllData.minfvalsCov/100, DisplayName='cov model')
+% histogram(nllData.minfvalsInd/100, DisplayName='ind model')
+% hold off
+% ylabel("Count")
+% xlabel("NLL")
+% legend
+% title("bestfit fvals (train dataset)")
+% 
+% %% Make plots
+% modelParams = nllData.paramsCovModel;
+% plotFitResult_guessrate(formattedData, modelParams, "cov", errBins, false)
+% 
+% % Display parameters
+% for i =1:6
+%     fprintf("Fit: %.4f \n", modelParams(i))
+% end
+% 
+% fprintf("Scale Fit: %.4f \n", modelParams(i + 1))
+% fprintf("Meta Fit: %.4f \n", modelParams(i + 2))
+% fprintf("Cc Fit: %.4f \n", modelParams(i + 3))
+% fprintf("GR Fit: %.4f \n", modelParams(i + 4))
+% % fprintf("Ori scale Fit: %.4f \n", modelParams(i + 5))
+% % fprintf("Bias: %.4f \n", modelParams(i + 6))
+% disp('\n\n')
+% 
+% modelParams = nllData.paramsIndModel;
+% plotFitResult_guessrate(formattedData, modelParams, "ind", errBins, false)
+% 
+% % Display parameters
+% for i =1:6
+%     fprintf("Fit: %.4f \n", modelParams(i))
+% end
+% 
+% fprintf("Shape Fit: %.4f \n", modelParams(i + 1))
+% fprintf("Scale Fit: %.4f \n", modelParams(i + 2))
+% fprintf("Meta Fit: %.4f \n", modelParams(i + 3))
+% fprintf("Cc Fit: %.4f \n", modelParams(i + 4))
+% fprintf("GR Fit: %.4f \n", modelParams(i + 5))
+% % fprintf("Ori scale Fit: %.4f \n", modelParams(i + 6))
+% % fprintf("Bias: %.4f \n", modelParams(i + 7))
+% 
+

@@ -29,12 +29,12 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 % addpath('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis\Utils\')
 
 % expData            = load('Data\CORNFB01.mat'); % Yichao
-expData            = load('./Data/COR33.mat'); % Akash
+expData            = load('../Data/COR33.mat'); % Akash
 % expData            = load('./Data/COR31.mat'); % Tien
 % expData            = load('./Data/COR32.mat'); % Jiaming
 % expData            = load('./Data/CORNFB02.mat');% Jonathan
 
-fltData       = expData.dat( expData.dat.session > 2 , :); 
+fltData       = expData.dat( expData.dat.session > 0 , :); 
 f.dat         = fltData;
 formattedData = formatExpData(f, false, false); % no de-baising, work with raw errors
 
@@ -55,10 +55,10 @@ result = Optimize(formattedData, initCond, "cov", [], optParams, "full");
 % save("akash_full_model_cov_fit_method_wraped_gauss.mat", "result");
 
 %%
-% load('akash_full_model_ind_fit_method_2.mat');
+% load('../FitData/akash_full_model_ind_fit_method_2.mat');
 % load('akash_full_model_cov_fit_method_2.mat');
 % load('tien_full_model_cov_fit_method_2.mat');
-% load("akash_full_model_cov_fit_method_wraped_gauss.mat")
+load("../FitData/akash_full_model_cov_fit_method_wraped_gauss.mat")
 errBins   = -90:3:90; 
 
 [~, idx] = min(result.f);

@@ -31,9 +31,9 @@ f.dat         = fltData;
 formattedData = formatExpData(f, false, false); % no de-baising, work with raw errors
 initCond      = getInitialConditions(formattedData);
 
-%%
-optParams.nStarts = 30;
-result = Optimize(formattedData, initCond, "ind", [], optParams, "reduced"); 
+% %%
+% optParams.nStarts = 30;
+% result = Optimize(formattedData, initCond, "ind", [], optParams, "reduced"); 
 
 %%
 % save("./Data/akash_fit_model_GR_v2_ind.mat", "result");

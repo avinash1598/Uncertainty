@@ -55,7 +55,7 @@ sigma = 2;
 x = -90:0.01:90;
 pdf_true = normpdf(x, mu, sigma);
 
-stepSize = [0.01 0.1 0.2];
+stepSize = [0.001 0.1 0.2];
 sampleSizes = [100 1000 10000 100000];
 
 % Decreasing step size too much can overestimte probability in each bin
@@ -81,6 +81,8 @@ for i = 1:length(stepSize)
     hold on
     
     % analytical pdf
+    % Trust the analytical solution. PDF estimated from data is impacted as
+    % binwidth decreases
     plot(x, pdf_true, "r", "LineWidth",2)
 
     title(["Step size = " num2str(stepSize(i))])

@@ -40,6 +40,10 @@ trial_probs_HC   = zeros(size(trlErrors));   % conditional prob of error given c
 trial_probs_LC   = zeros(size(trlErrors));   % conditional prob of error given conf report - LC
 trial_probs_Conf = zeros(size(trlErrors)); % Probability of a trial being high or low confidence
 
+warning("Incorrect nll code. Fix this!")
+warning("It might be unfair to compare full vs reduced model.")
+warning("To compare these fairly, I need to ensure both models are describing the exact same joint probability space.")
+
 for i=1:nLevels
     modelParams.sigma_s             = param_sigma_s(i);
     modelParams.scale               = param_scale;
@@ -63,7 +67,7 @@ for i=1:nLevels
         modelParams.biasShape      = biasShape;
         
         retData = getPDFs_cov(orientations, modelParams, true); % Seems like setting this to false makes things slow
-        
+
         for j = 1:numel(orientations)
             
             % PDF
@@ -89,10 +93,12 @@ for i=1:nLevels
                 retData.rvOriErrs, ...
                 retData.analyticalPDF_stim_LC(j, :), ...
                 trlErrors(idxLC), ...
-                'linear');
+                'linear'); % this might return zero for out of range values
             trial_probs_Conf(idxLC) = retData.pLC_stim(j); % Mutually exclusive from LC
+            % Scale by ori as well
 
         end
+
     elseif fitType == "reduced"
         retData = getPDFs_cov_reduced(modelParams, true); % originally set to true
         
@@ -103,7 +109,7 @@ for i=1:nLevels
             retData.analyticalPDF(:), ...
             trlErrors(idx), ...
             'linear');
-        
+
         % PDF HC
         idxHC = (trlConfReports == 1) & idx;
         trial_probs_HC(idxHC) = interp1( ...
@@ -126,20 +132,44 @@ for i=1:nLevels
 
 end
 
+% if fitType == "full" || fitType == "full_jumbo"
+%     % P(stim)
+%     trial_probs_HC = trial_probs_HC(:)./numel(orientations);
+%     trial_probs_LC = trial_probs_LC(:)./numel(orientations);
+% end
+
+
 % NLL loss
 % P(err|trial) = P(err|trial, confreport)*P(confreport|trial)
-ll_HC = log( trial_probs_HC .* trial_probs_Conf + eps); % P(ERR|HC)*P(HC)
-ll_LC = log( trial_probs_LC .* trial_probs_Conf + eps); % P(ERR|LC)*P(LC)
-ll    = log( trial_probs + eps ); 
+% Very Very Important: USe of eps is problamatic!!!!
+% Many small eps can blow up the values. Better otpion might be to clamp
+% probabiltites instead
+% tmp = trial_probs_HC .* trial_probs_Conf 
+% tmp(tmp <= 0) = eps;
+% include delta e terms as well ie. in this case 2
+% How about conditional NLL?
+pHC_ = trial_probs_HC.* trial_probs_Conf;
+pHC_ = pHC_(trlConfReports == 1); % this is needed to avoid lot of zeros
+pHC_(pHC_ <= 0) = eps;
+pLC_ = trial_probs_LC.* trial_probs_Conf;
+pLC_ = pLC_(trlConfReports == 0);
+pLC_(pLC_ <= 0) = eps;
+
+% I should actually be using much smaller bin size i.e. 0.1
+ll_HC = log( pHC_ ); % P(ERR|HC)*P(HC) eps
+ll_LC = log( pLC_ ); % P(ERR|LC)*P(LC)
+% ll    = log( trial_probs + eps ); 
 
 % ll_HC and ll_LC intersection should be zero. Or is it?
 
-nll = ( ll_HC + ll_LC); %ll +  % Summation of log => correct thing to do
+% nll = ( ll_HC + ll_LC); %ll +  % Summation of log => correct thing to do
 
 if ~optimizationFlag
-    nll = - nll(:); % NLL for each trial
+    nll = [-ll_HC' -ll_LC'];
+    % nll = - nll(:); % NLL for each trial
 else
-    nll = - sum(nll(:)); % Aggregate NLL of all trials
+    % nll = - sum(nll(:)); % Aggregate NLL of all trials
+    nll = - sum(ll_HC(:)) - sum(ll_LC(:));
 end
 
 end

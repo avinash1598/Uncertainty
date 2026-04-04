@@ -1,0 +1,62 @@
+function retData = getInitialConditions(data, boundaryEffect)
+
+if nargin < 2
+    boundaryEffect = true;
+end
+
+grpOriErr            = data.resp_err_all; 
+orientations         = data.orientations;
+n_uncertainty_levels = size(grpOriErr, 1);
+
+stdByOri             = data.stdByOri;
+
+%% Orientation dependet sigma scale
+
+% Subject dependent parameter values
+shape1 = 1;
+shape2 = 90;
+modelFun = @(params, ori) params(1) + ...
+                               params(2) .* abs(shape1*sind(ori - shape2));
+
+bs = zeros(1, n_uncertainty_levels);
+as = zeros(1, n_uncertainty_levels);
+
+for i=1:n_uncertainty_levels
+
+    initParams = [mean(stdByOri(i, :)), 1];
+    
+    lb = [0 0];  % optional lower bounds
+    ub = [ Inf  Inf];  % optional upper bounds
+    
+    params_est = lsqcurvefit(modelFun, initParams, ...
+                             orientations', stdByOri(i, :), ...
+                             lb, ub);
+    
+    b_est = params_est(1);
+    a_est = params_est(2);
+    
+    bs(i) = b_est;
+    as(i) = a_est;
+    
+end
+
+retData.sigma_m_shape1 = shape1;
+retData.sigma_m_shape2 = shape2;
+retData.b = bs; % Baseline sigma
+retData.a = as; % scale dependent sigma scale
+
+%% Bias
+bias = data.bias;
+modelFun = @(params, ori) params(1) .* sind(2*ori);
+initParams = [ rand ];
+
+lb = [ 0 ];  % optional lower bounds
+ub = [ Inf ];  % optional upper bounds
+
+params_est = lsqcurvefit(modelFun, initParams, ...
+                         orientations', bias', ...
+                         lb, ub);
+retData.biasAmp   = params_est(1);
+retData.biasShape = 2;
+
+end

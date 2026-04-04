@@ -1,0 +1,1 @@
+No concept of cov vs independent in discriptive model (only single stochasticity and double stochasticity)

@@ -177,6 +177,9 @@ for i=1:n_uncertainty_levels
     plot(analyticalSols{idx}.rvOriErrs, analyticalSols{idx}.analyticalPDF_LC, DisplayName="fit", LineWidth=1.5);
     hold off
     
+    % Must be 1
+    disp(trapz(analyticalSols{idx}.rvOriErrs, analyticalSols{idx}.analyticalPDF_LC))
+
     %xline(0, LineStyle="--"); Probalamatic line
     xlabel("Error (deg)");
     ylabel("P( Err / LC )");
@@ -203,6 +206,9 @@ for i=1:n_uncertainty_levels
 
     legend;
     hold off;
+
+    % Must be 1
+    disp(trapz(analyticalSols{idx}.rvOriErrs, analyticalSols{idx}.analyticalPDF_HC))
 
 end
 
@@ -233,6 +239,10 @@ for i=1:n_uncertainty_levels
 
     legend;
     hold off;
+    
+    % Must be 1
+    disp(trapz(analyticalSols{idx}.rvOriErrs, analyticalSols{idx}.analyticalPDF))
+
 end
 
 % Plot error

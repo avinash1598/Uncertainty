@@ -2,6 +2,8 @@
 
 function [retData] = getPDFs_cov_reduced(modelParams, optimizationFlag)
 
+warning("Deprecated. Use LLScriptsNoBin instead.")
+
 if nargin < 2
     optimizationFlag = false;   % default value
 end
@@ -136,6 +138,7 @@ for k = -K:K
     %       ./ sqrt(2*pi*sigma_m_stim.^2);
     p_X = exp(-(Z'.^2).*inv2sig2) .* normconst;
     pdf = pdf + sum(p_X,2);
+    %pdf = pdf + mean(p_X,2);
     
     % HC
     p_X_HC = p_X.*pHC;

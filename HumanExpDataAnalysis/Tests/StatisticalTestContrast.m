@@ -1,5 +1,5 @@
 restoredefaultpath
-close all
+% close all
 clear all
 
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')

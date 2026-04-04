@@ -25,8 +25,8 @@ data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/Proces
 
 subjectName = ["Tien", ...
     "Akash", ...
-    "Jonathan"
-     ]; %" "Yichao"
+    "Jonathan", ...
+     "Yichao"]; %" "Yichao"
 
 dataFileNames = ["COR31.mat" "COR33.mat" "CORNFB01.mat" "CORNFB02.mat" ]; % "CORNFB03.mat"
 fltSessionIdx = [0, 0, 0, 0, 2, 1];
@@ -78,7 +78,7 @@ for fIdx=1:numel(subjectName)
     title(sprintf("Model comparison Cov (Subject: %d)", fIdx))
     legend;
     xline(0, LineStyle="--")
-    xlim([-100 100])
+    xlim([-200 200])
     
 
     % Ind
@@ -120,7 +120,7 @@ for fIdx=1:numel(subjectName)
     title(sprintf("Model comparison Ind (Subject: %d)", fIdx))
     legend;
     xline(0, LineStyle="--")
-    xlim([-100 100])
+    xlim([-200 200])
 end
 
 figure
@@ -176,6 +176,7 @@ for fIdx=1:numel(subjectName)
     title(sprintf("Model comparison (Subject: %d)", fIdx))
     legend;
     xline(0, LineStyle="--")
+    xlim([-50 50])
     
 end
 

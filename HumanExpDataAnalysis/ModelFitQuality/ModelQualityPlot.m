@@ -29,11 +29,11 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 % addpath('C:\Users\avinash1598\Desktop\Uncertainty\OptimizationUtils\')
 % addpath('C:\Users\avinash1598\Desktop\Uncertainty\SimulationScripts\CompleteModelEstimation\GenerateSimulatedData')
 
-expData            = load('./Data/COR33.mat');     % Akash
+expData            = load('../Data/COR33.mat');     % Akash
 % expData            = load('./Data/COR31.mat');   % Tien
 % expData            = load('./Data/COR32.mat');   % Jiaming
-% expData            = load('./Data/CORNFB02.mat');% Jonathan
-% expData            = load('Data\CORNFB01.mat');  % Yichao
+% expData            = load('../Data/CORNFB02.mat');% Jonathan
+% expData            = load('../Data/CORNFB01.mat');  % Yichao
 % expData            = load('Data\CORNFB01.mat');  % Yichao
 % For subject 6 => David: make sure to change the orientation dependent
 % error
@@ -48,9 +48,10 @@ initCond      = getInitialConditions(formattedData);
 n_uncertainty_levels = formattedData.n_uncertainty_levels; % Hard code for now
 
 %%
-% load('./Data/ModelFitQualityTest_Akash.mat');
-load('ModelFitQualityTest_Yichao.mat');
-plotFitQuality(formattedData, dataToSave)
+load('../Data/ModelFitQualityTest_Akash.mat');
+% load('../Data/ModelFitQualityTest_Yichao.mat');
+% load('../Data/ModelFitQualityTest_Jonathan.mat');
+% plotFitQuality(formattedData, dataToSave)
 % load('./Data/ModelFitQualityTest_Jonathan.mat');
 
 % Fit: guess rate is weirdly high!
@@ -129,18 +130,20 @@ map.cov.reduced = "resultReducedCov";
 map.cov.full    = "resultFullCov";
 map.cov.jumbo   = "resultFullJumboCov";
 
-modelType = "ind";
-fitType = "reduced";
+modelType = "cov";
+fitType = "full";
 key = map.(modelType).(fitType);
 keySim = key + "Sim";
 
+% Plot data fit
 errBins = -90:3:90;
 [~, idx] = min(dataToSave.(key).f);
 modelParams = dataToSave.(key).x(idx, :);
-% plotFitResult(formattedData, modelParams, initCond, modelType, fitType, errBins)
+plotFitResult(formattedData, modelParams, initCond, modelType, fitType, errBins)
 % NLL for each trial
 nllsData = getNLLForEachTrial(formattedData, initCond, modelType, fitType, modelParams);
 
+% Plot simulation data fit
 % Simulation - GR too high (red flag)
 % There is something about guess rate that impacts recoverability
 [~, idx] = min(dataToSave.(keySim).f);
@@ -154,7 +157,7 @@ elseif modelType == "cov"
 end
 
 initCondSim = getInitialConditions(data);
-% plotFitResultSim(data, modelParamsSim, initCondSim, modelType, fitType, errBins)
+plotFitResultSim(data, modelParamsSim, initCondSim, modelType, fitType, errBins)
 
 for i = 1:numel(modelParams)
     fprintf("Data: %.4f, Sim: %4f \n", modelParams(i), modelParamsSim(i))
@@ -165,10 +168,10 @@ nllsSimData = getNLLForEachTrial(data, initCondSim, modelType, fitType, modelPar
 
 figure
 hold on
-BinEdges = 38:0.5:50;
-histogram( nllsSimData - nllsData, DisplayName="del NLL(Data) - NLL(Sim)")
-% histogram(nllsData, BinEdges, DisplayName="Data")
-% histogram(nllsSimData, BinEdges, DisplayName="Simulated Data")
+% BinEdges = 38:0.5:50;
+% histogram( nllsSimData - nllsData, DisplayName="del NLL(Data) - NLL(Sim)")
+histogram(nllsData, DisplayName="Data") % BinEdges
+histogram(nllsSimData, DisplayName="Simulated Data") % BinEdges
 xline(0, LineStyle="--", LineWidth=1, HandleVisibility="off")
 xlabel("del NLL(Data) - NLL(Sim)")
 ylabel("Count")
@@ -176,33 +179,33 @@ title("del NLL(Data) - NLL(Sim) for each trial")
 legend
 
 
-%% Ind vs Cov
-modelType = "ind";
-fitType = "full";
-key = map.(modelType).(fitType);
+% %% Ind vs Cov
+% modelType = "ind";
+% fitType = "full";
+% key = map.(modelType).(fitType);
+% 
+% [~, idx] = min(dataToSave.(key).f);
+% modelParams = dataToSave.(key).x(idx, :);
+% % NLL for each trial
+% nllsDataInd = getNLLForEachTrial(formattedData, initCond, modelType, fitType, modelParams);
 
-[~, idx] = min(dataToSave.(key).f);
-modelParams = dataToSave.(key).x(idx, :);
-% NLL for each trial
-nllsDataInd = getNLLForEachTrial(formattedData, initCond, modelType, fitType, modelParams);
-
-modelType = "cov";
-fitType = "full";
-key = map.(modelType).(fitType);
-
-[~, idx] = min(dataToSave.(key).f);
-modelParams = dataToSave.(key).x(idx, :);
-% NLL for each trial
-nllsDataCov = getNLLForEachTrial(formattedData, initCond, modelType, fitType, modelParams);
-
-figure
-hold on
-BinEdges = 38:0.5:50;
-histogram( nllsDataCov - nllsDataInd, DisplayName="del NLL(Cov) - NLL(Ind)")
-% histogram(nllsData, BinEdges, DisplayName="Data")
-% histogram(nllsSimData, BinEdges, DisplayName="Simulated Data")
-xline(0, LineStyle="--", LineWidth=1, HandleVisibility="off")
-xlabel("del NLL(Cov) - NLL(Ind)")
-ylabel("Count")
-title("del NLL(Cov) - NLL(Ind) for each trial")
-legend
+% modelType = "cov";
+% fitType = "full";
+% key = map.(modelType).(fitType);
+% 
+% [~, idx] = min(dataToSave.(key).f);
+% modelParams = dataToSave.(key).x(idx, :);
+% % NLL for each trial
+% nllsDataCov = getNLLForEachTrial(formattedData, initCond, modelType, fitType, modelParams);
+% 
+% figure
+% hold on
+% BinEdges = 38:0.5:50;
+% histogram( nllsDataCov - nllsDataInd, DisplayName="del NLL(Cov) - NLL(Ind)")
+% % histogram(nllsData, BinEdges, DisplayName="Data")
+% % histogram(nllsSimData, BinEdges, DisplayName="Simulated Data")
+% xline(0, LineStyle="--", LineWidth=1, HandleVisibility="off")
+% xlabel("del NLL(Cov) - NLL(Ind)")
+% ylabel("Count")
+% title("del NLL(Cov) - NLL(Ind) for each trial")
+% legend

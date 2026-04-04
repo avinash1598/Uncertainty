@@ -50,11 +50,12 @@ if modelType == "cov"
     param_scale          = modelParams(n_uncertainty_levels + 1);
     param_sigma_meta     = modelParams(n_uncertainty_levels + 2);
     param_Cc             = modelParams(n_uncertainty_levels + 3);
-    param_guessrate      = modelParams(n_uncertainty_levels + 4);
-
+    param_exp            = modelParams(n_uncertainty_levels + 4);
+    param_guessrate      = modelParams(n_uncertainty_levels + 5);
+    
     if fitType == "full"
-        param_sigma_ori_scale = modelParams(n_uncertainty_levels + 5);
-        param_bias       = modelParams(n_uncertainty_levels + 6);
+        param_sigma_ori_scale = modelParams(n_uncertainty_levels + 6);
+        param_bias       = modelParams(n_uncertainty_levels + 7);
     elseif fitType == "full_jumbo"
         param_sigma_a    = modelParams(n_uncertainty_levels + 5:2*n_uncertainty_levels + 4);
         param_bias       = modelParams(2*n_uncertainty_levels + 5);
@@ -76,6 +77,19 @@ elseif modelType == "ind"
         param_bias       = modelParams(2*n_uncertainty_levels + 6);
     end
 
+elseif modelType == "singlyStochastic"
+    param_sigma_s        = modelParams(1:n_uncertainty_levels);
+    param_sigma_meta     = modelParams(n_uncertainty_levels + 1);
+    param_Cc             = modelParams(n_uncertainty_levels + 2);
+    param_guessrate      = modelParams(n_uncertainty_levels + 3);
+    
+    if fitType == "full"
+        param_sigma_ori_scale = modelParams(n_uncertainty_levels + 4);
+        param_bias            = modelParams(n_uncertainty_levels + 5);
+    elseif fitType == "full_jumbo"
+        param_sigma_a    = modelParams(n_uncertainty_levels + 4:2*n_uncertainty_levels + 3);
+        param_bias       = modelParams(2*n_uncertainty_levels + 4);
+    end
 else
     error("Invalid modelType")
 end
@@ -95,7 +109,6 @@ anlytcl_sigma_s_reduced = zeros(1, n_uncertainty_levels);
 for i=1:n_uncertainty_levels
 
     mP.sigma_s             = param_sigma_s(i);
-    mP.scale               = param_scale;
     mP.Cc                  = param_Cc;
     mP.sigma_meta          = param_sigma_meta;
     mP.guessRate           = param_guessrate;
@@ -115,6 +128,7 @@ for i=1:n_uncertainty_levels
     end
     
     if modelType == "ind"
+        mP.scale = param_scale;
         mP.shape = param_shape;
         
         if fitType == "full" || fitType == "full_jumbo"
@@ -124,13 +138,21 @@ for i=1:n_uncertainty_levels
         end
     
     elseif modelType == "cov"
-        
+        mP.scale = param_scale;
+        mP.exp   = param_exp;
+
         if fitType == "full" || fitType == "full_jumbo"
             analyticalSol = getPDFs_cov(orientations, mP, false);
         else
             analyticalSol = getPDFs_cov_reduced(mP, false);
         end
 
+    elseif modelType == "singlyStochastic"
+        if fitType == "full" || fitType == "full_jumbo"
+            analyticalSol = getPDFs_SinglyStochastic(orientations, mP, false);
+        else
+            error("No reduced version of this model!")
+        end
     end
     
     anlytcl_sigma_m(i)    = analyticalSol.E_sigma_m;

@@ -23,7 +23,7 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 % addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/')
 
 orientations     = 0:15:175; %linspace(0, 180, 18); %0:10:180; % linspace(0, 180, 18);
-ntrials_per_ori  = 2500; %250;
+ntrials_per_ori  = 25; %2500; %250;
 b                = linspace(1, 2.2, 6); % linspace(1, 2.2, 8); Note: different minimum noise level (0.1). Choose b such that average noise level ranges from low to high (relative to internal noise level)
 a                = 0.67.*b; %0.67.*b;   % Does a depend upon b? Yes
 biasAmp          = 0.5; %0.5;       % Does bias depend upon uncertainty level? No. This bias level seems okay.
@@ -140,14 +140,19 @@ data.params.guessRate             = guessRate;
 
 %% Get analytical solution
 %% Gamma samples count
-s_cnts    = [5 10 20 30 50 70 100 200 500 1000];
-bin_width =[0.1 0.5 1 1.5 2 2.2 3 5 10];
+s_cnts    = [5 10 20 30 50 70 100 ]; % 500 1000 200
+% bin_width =[0.1 0.5 1 1.5 2 2.2 3 5 10];
+bin_width =[0.001 0.01 0.1 0.5 1 2 3 5 10];
 errors    = zeros(uncertainty_levels, numel(s_cnts), numel(bin_width));
+nlls      = zeros(uncertainty_levels, numel(s_cnts), numel(bin_width));
 
+% Whatever bin size you choose it should give bin edges in range of -90 to
+% 90
 % Bindwidth threshold Depends upon data
 % Samples count of 100 is in general good enough
 
 for i=1:uncertainty_levels
+    disp(i)
     for j=1:numel(bin_width)
         
         rvOriErr = -90:bin_width(j):90; %
@@ -161,17 +166,17 @@ for i=1:uncertainty_levels
         dataLC = resp_err_all_reshaped(i, cR == 0);
         
         % GT
-        [pdf, ~] = histcounts(grpOriErr, ...
-                'Normalization', 'pdf', ...
-                'BinEdges', edges);
-    
-        [pdfHC, ~] = histcounts(dataHC, ...
-                'Normalization', 'pdf', ...
-                'BinEdges', edges);
-    
-        [pdfLC, ~] = histcounts(dataLC, ...
-                'Normalization', 'pdf', ...
-                'BinEdges', edges);
+%         [pdf, ~] = histcounts(grpOriErr, ...
+%                 'Normalization', 'pdf', ...
+%                 'BinEdges', edges);
+%     
+%         [pdfHC, ~] = histcounts(dataHC, ...
+%                 'Normalization', 'pdf', ...
+%                 'BinEdges', edges);
+%     
+%         [pdfLC, ~] = histcounts(dataLC, ...
+%                 'Normalization', 'pdf', ...
+%                 'BinEdges', edges);
     
         for k=1:numel(s_cnts)
         
@@ -184,15 +189,50 @@ for i=1:uncertainty_levels
             modelParams.sigma_meta          = sigma_meta;
             modelParams.guessRate           = guessRate;
             modelParams.internalNoiseSamplesCnt = s_cnts(k);
+
+            modelParams.sigma_m_shape1            = 1;
+            modelParams.sigma_m_shape2            = 90;
+            modelParams.biasShape                 = 2;
+            modelParams.oriErrBinWidth            = bin_width(j);
+
+            %retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams, true);
+            retData = getPDFs_cov(orientations, modelParams, true);
             
-            retData = getEstimationsPDF_cov(orientations, rvOriErr, modelParams, true);
-    
+            
+            % compute NLL instead
             % USe likelihood instead. RMSE error might be misleading
-            err = (pdf - retData.analyticalPDF).^2 + ...
-                (pdfHC - retData.analyticalPDF_HC).^2 + ...
-                (pdfLC - retData.analyticalPDF_LC).^2;
+%             err = (pdf - retData.analyticalPDF).^2 + ...
+%                 (pdfHC - retData.analyticalPDF_HC).^2 + ...
+%                 (pdfLC - retData.analyticalPDF_LC).^2;
+%             
+%             errors(i, k, j) = mean( err(:) );
+
             
-            errors(i, k, j) = mean( err(:) );
+            % Likelihood computations
+            likelihoodHC = interp1(retData.rvOriErrs, ...
+                retData.analyticalPDF_HC, dataHC, 'linear');
+            likelihoodHC = likelihoodHC.*retData.pHC;
+            likelihoodHC(likelihoodHC == 0) = eps;
+%             likelihoodHC = likelihoodHC*retData.pHC*bin_width(j);
+%             nllHC = -log(likelihoodHC);
+% 
+            likelihoodLC = interp1(retData.rvOriErrs, ...
+                retData.analyticalPDF_HC, dataLC, 'linear');
+            likelihoodLC = likelihoodLC.*retData.pLC;
+            likelihoodLC(likelihoodLC == 0) = eps;
+%             likelihoodLC = likelihoodLC*retData.pLC*bin_width(j);
+%             nllLC = -log(likelihoodLC);
+
+            nllHC = -(log(likelihoodHC) + log(bin_width(j)));
+            nllLC = -(log(likelihoodLC) + log(bin_width(j)));
+
+            % nan due to incorrect bin edges
+%             if sum(isnan(nllHC)) ~= 0
+%                 keyboard
+%             end
+
+%             assert(sum(isnan(nllHC)) == 0)
+            nlls(i, k, j) = sum(nllHC) + sum(nllLC);
         end
     end
     
@@ -214,6 +254,31 @@ for i=1:numel(s_cnts)
     plot(bin_width, squeeze( errors(:, i, :) ), LineWidth=2)
     xlabel("Bin width")
     ylabel("Mean Error (GT - Analytical)")
+    title(sprintf("Samples cnt: %.2f", s_cnts(i)))
+    legend
+end
+
+%%
+figure
+for i=1:numel(bin_width)
+    subplot(2, 5, i)
+    tNLL = nlls(:,:,i);
+    tNLL = sum(tNLL, 1);
+    plot(s_cnts, tNLL, LineWidth=2)
+    xlabel("Gamma sample counts")
+    ylabel("NLL")
+    title(sprintf("Bin width: %.2f", bin_width(i)))
+    legend
+end
+
+figure
+for i=1:numel(s_cnts)
+    subplot(2, 5, i)
+    tNLL = nlls(:,i,:); tNLL = squeeze(tNLL);
+    tNLL = sum(tNLL, 1);
+    plot(bin_width, tNLL, LineWidth=2)
+    xlabel("Bin width")
+    ylabel("NLL")
     title(sprintf("Samples cnt: %.2f", s_cnts(i)))
     legend
 end
