@@ -32,7 +32,7 @@ n_uncertainty_levels = formattedData.n_uncertainty_levels;
 %% Cross-validate
 optParams.nStarts = 30;
 K = 5; % K-fold
-nPerm = 6; % no of data permutation
+nPerm = 20; % no of data permutation
 cv_result = NLLCrossValidate(formattedData, initCond, K, nPerm, optParams);
 %%
 
