@@ -10,6 +10,7 @@ trlData              = convertToTrialData(data);
 trlErrors            = trlData.trlErrors;
 trlConfReports       = trlData.trlConfReports;
 trlUncertaintyLevels = trlData.trlUncertaintyLevels;
+trlStimOris          = trlData.trlStimOris;
 grpOriErr            = trlData.grpOriErr;
 N                    = numel(grpOriErr(:));
 n_uncertainty_levels = trlData.n_uncertainty_levels;
@@ -72,10 +73,12 @@ for h=1:nPerm
         trainData.trlErrors            = trlErrors(trainIdx);
         trainData.trlConfReports       = trlConfReports(trainIdx);
         trainData.trlUncertaintyLevels = trlUncertaintyLevels(trainIdx);
+        trainData.trlStimOris          = trlStimOris(trainIdx);
         
         testData.trlErrors            = trlErrors(testIdx);
         testData.trlConfReports       = trlConfReports(testIdx);
         testData.trlUncertaintyLevels = trlUncertaintyLevels(testIdx);
+        testData.trlStimOris          = trlStimOris(testIdx);
         
         cvTrlData{h, k}.trainData = trainData;
         cvTrlData{h, k}.testData  = testData;
