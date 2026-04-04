@@ -1,19 +1,20 @@
 close all
 clear all
+restoredefaultpath
 
-% addpath('C:\Users\avinash1598\Desktop\Uncertainty\ProcessModel\HumanExpDataAnalysis\Utils\')
-% addpath('C:\Users\avinash1598\Desktop\Uncertainty\Uncertainty\ProcessModel\LLScriptsUtils\')
-% addpath('C:\Users\avinash1598\Desktop\Uncertainty\ProcessModel\PlotUtils\')
-% addpath('C:\Users\avinash1598\Desktop\Uncertainty\ProcessModel\Utils\')
-% addpath('C:\Users\avinash1598\Desktop\Uncertainty\ProcessModel\OptimizationUtils\')
-% addpath('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis\Utils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis\Utils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\LLScriptsUtils\LLScriptsNoBin\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\PlotUtils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\Utils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\OptimizationUtils\OptimizationScriptsNoBin\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis\Utils\')
 
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/LLScriptsNoBin/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/OptimizationScriptsNoBin')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/SimulationScripts/CompleteModelEstimation/GenerateSimulatedData')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/LLScriptsNoBin/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/OptimizationScriptsNoBin')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/SimulationScripts/CompleteModelEstimation/GenerateSimulatedData')
 
 % expData            = load('../Data/COR33.mat');    % Akash
 % expData            = load('../Data/COR31.mat');    % Tien
@@ -33,6 +34,7 @@ optParams.nStarts = 30;
 K = 5; % K-fold
 nPerm = 6; % no of data permutation
 cv_result = NLLCrossValidate(formattedData, initCond, K, nPerm, optParams);
+%%
 save('./CV_Data/cross_validation_Jonathan_full.mat', 'cv_result');
 
 % %% NLL on test data

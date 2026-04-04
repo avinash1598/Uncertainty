@@ -6,8 +6,8 @@ function retData = formatExpData(data, debias, sortByMAD)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Load stimulus energy details
-StimEnergyTable = readtable('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/stimulus_energy.csv');
-% StimEnergyTable = readtable('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis\Data\stimulus_energy.csv');
+%StimEnergyTable = readtable('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/stimulus_energy.csv');
+StimEnergyTable = readtable('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis\Data\stimulus_energy.csv');
 
 % TODO: remove error bias. Assuming bias does not depend upon uncertainty
 stimOris       = data.dat.stimOri;
