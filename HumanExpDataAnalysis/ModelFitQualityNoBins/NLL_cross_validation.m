@@ -84,7 +84,7 @@ histogram(nllData.deltaNLL_Cov_Ind, BinWidth=1)
 xlabel("NLL (cov - ind) on test data")
 ylabel("count")
 xline(0, LineStyle="--")
-xlim([-60, 60])
+xlim([-20, 20])
 % ylim([0 10])
 title("Do NLL differ between cov and ind? ( Cross-validation result)")
 

@@ -4,12 +4,6 @@ clear all
 
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
 
-% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR31.mat'); % Tien
-% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/COR33.mat'); % Akash
-% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB01.mat'); % Yichao
-% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB02.mat');   % Jonathan
-% data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/CORNFB03.mat'); % David
-
 dataFileNames = ["COR31.mat" "COR33.mat" "CORNFB01.mat" "CORNFB02.mat" "CORNFB03.mat"];
 fltSessionIdx = [0, 0, 0, 0, 2, 1];
 
@@ -23,37 +17,45 @@ for fIdx=1:numel(dataFileNames)
     fileName = dataFileNames(fIdx);
     data = load('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Data/' + fileName); % David
 
-    % This needs to be done for each subjects
-    uniqContrasts = unique( data.dat.stimContrast );
-    uniqSpreads   = unique( data.dat.stimSpread );
-    uniqDurations = unique( data.dat.stimDur );
+    fltData = data.dat( data.dat.session > fltSessionIdx(fIdx), :); % TODO: change as per subject
+    f.dat = fltData; %data.dat; %fltData;
+    formattedData = formatExpData(f, false, true);
     
-    % Duration
-    for s=1:numel(uniqSpreads)
-        for c=1:numel(uniqContrasts)
+    % maybe use 1, 2 and 5, 6
+    lowUncerCondn   = formattedData.uncertaintyVals(2, :); % pick intermediate such that it has good split for trial count
+    highUncertCondn = formattedData.uncertaintyVals(5, :); % pick intermediate such that it has good split for trial count
     
-            fltData = data.dat( data.dat.session > fltSessionIdx(fIdx), :); % TODO: change as per subject
-            fltData = fltData(fltData.stimSpread == uniqSpreads(s) & fltData.stimContrast == uniqContrasts(c), :);
-            f.dat = fltData; %data.dat; %fltData;
-            formattedData = formatExpData(f, false, true);
+    % 1: contrast, spread, duration
+    fltData = fltData( ...
+        ( ...
+            fltData.stimContrast == lowUncerCondn(1) & ...
+            fltData.stimSpread == lowUncerCondn(2) & ...
+            fltData.stimDur == lowUncerCondn(3) ...
+        ) | ...
+        ( ...
+            fltData.stimContrast == highUncertCondn(1) & ...
+            fltData.stimSpread == highUncertCondn(2) & ...
+            fltData.stimDur == highUncertCondn(3) ...
+        ), :);
+
+    f.dat = fltData; %data.dat; %fltData;
+    formattedData = formatExpData(f, false, true);
             
-            if size(formattedData.uncertaintyVals, 1) == 2
-                % data needs to be sorted by uncertainty level
-                assertionChecks(formattedData, 'stimDur')
-                [arr1, arr2, arr3] = errorMetrics(formattedData);
-    
-                deltaErrorDiffs = [deltaErrorDiffs arr3];
-                L1_errDiffs     = [L1_errDiffs arr1];
-                L2_errDiffs     = [L2_errDiffs arr2];
-            end
-    
-        end
+    if size(formattedData.uncertaintyVals, 1) == 2
+        % data needs to be sorted by uncertainty level
+        %assert(formattedData.uncertaintyVals(1, 2) < formattedData.uncertaintyVals(2, 2) );
+        [arr1, arr2, arr3] = errorMetrics(formattedData);
+
+        deltaErrorDiffs = [deltaErrorDiffs arr3];
+        L1_errDiffs     = [L1_errDiffs arr1];
+        L2_errDiffs     = [L2_errDiffs arr2];
     end
+    
 
 end
 
-% [h,p,ci,stats] = ttest(deltaErrorDiffs, 0)
-% [p,h,stats] = signrank(deltaErrorDiffs, 0)
+[h,p,ci,stats] = ttest(deltaErrorDiffs, 0)
+[p,h,stats] = signrank(deltaErrorDiffs, 0)
 
 [h,p,ci,stats] = ttest(deltaErrorDiffs, 0, 'Tail', 'right')
 [p,h,stats] = signrank(deltaErrorDiffs, 0, 'Tail', 'right')
@@ -61,39 +63,22 @@ end
 figure
 subplot(2, 2, 1)
 hold on
-histogram(deltaErrorDiffs, 'BinEdges',-40:5:30) %
+histogram(deltaErrorDiffs, 'BinWidth',2) %
 xline(0, 'LineStyle',"--")
 xlabel("delta (errDiff l2 - errorDiff l1)")
 ylabel("Count")
-title(sprintf("Multiplicative/Additive test for stim duration \n pooled across all subjects"))
-ylim([0 25])
+title(sprintf("Multiplicative/Additive testn \n pooled across all subjects"))
+ylim([0 10])
 
 subplot(2, 2, 2)
 hold on
-histogram(L1_errDiffs, DisplayName="Uncert. L1") %'BinEdges',0:5:40, 
-histogram(L2_errDiffs, DisplayName="Uncert. L2") % 'BinEdges',0:5:40,
+histogram(L1_errDiffs, 'BinWidth',2, DisplayName="Uncert. L1") %'BinEdges',0:5:40, 
+histogram(L2_errDiffs, 'BinWidth',2, DisplayName="Uncert. L2") % 'BinEdges',0:5:40,
 xline(0, 'LineStyle',"--")
 xlabel("Error Diffs")
 ylabel("Count")
 legend
 
-%%
-function assertionChecks(formattedData, key)
-    if key == "stimContrast" % decreasing -> increasing uncertainty
-        cVals = formattedData.uncertaintyVals(:, 1);
-        assert(cVals(2) < cVals(1));
-    end
-    
-    if key == "stimSpread" % decreasing -> increasing uncertainty
-        sVals = formattedData.uncertaintyVals(:, 2);
-        assert(sVals(2) > sVals(1))
-    end
-    
-    if key == "stimDur" % decreasing -> increasing uncertainty
-        dVals = formattedData.uncertaintyVals(:, 3);
-        assert(dVals(2) < dVals(1))
-    end
-end
 
 
 function [L1_errDiffs, L2_errDiffs, deltaErrorDiffs] = errorMetrics(formattedData)
@@ -174,8 +159,8 @@ function [L1_errDiffs, L2_errDiffs, deltaErrorDiffs] = errorMetrics(formattedDat
             errDiff_l1 = l1_LC_err - l1_HC_err; % Error diff at uncertainty level 1
             errDiff_l2 = l2_LC_err - l2_HC_err; % Error diff at uncertainty level 2
 
-%             errDiff_l1 = abs(errDiff_l1); % Error diff at uncertainty level 1
-%             errDiff_l2 = abs(errDiff_l2); 
+            errDiff_l1 = abs(errDiff_l1); % Error diff at uncertainty level 1
+            errDiff_l2 = abs(errDiff_l2); 
 
             deltaErrDiff = errDiff_l2 - errDiff_l1;
 
@@ -188,3 +173,4 @@ function [L1_errDiffs, L2_errDiffs, deltaErrorDiffs] = errorMetrics(formattedDat
         end 
     end
 end
+

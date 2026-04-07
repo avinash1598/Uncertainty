@@ -118,6 +118,7 @@ parfor itr = 1:nStarts
             %objFun = @(x) computeNLLCov_binned(x, metaData, 'full');
         
         elseif model == "ind"
+            % shape: mu ln, scale: var ln
             param_shape = rand;
             params = [param_sigma_s ...
                 param_shape ...
