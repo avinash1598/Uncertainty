@@ -143,7 +143,7 @@ parfor itr = 1:nStarts
         % Bounds (ga requires finite bounds!)
         lb = zeros(size(params));     % same as before
         ub = inf( 1, numel(params) ); % example finite upper bounds
-        ub(end - 2) = 0.1; %0.15; % 10% of the trials guess rate, TODO: try setting it to 0.15 instead to see the performance difference
+        ub(end - 2) = 0.1; %0.1 0.15; % 10% of the trials guess rate, TODO: try setting it to 0.15 instead to see the performance difference
         % GR: 10% of all the LC trials or 5% of all the trial
         warning('off','all')
         

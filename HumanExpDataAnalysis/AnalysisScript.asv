@@ -1072,8 +1072,8 @@ end
 bias = formattedData.bias;
 orientations = formattedData.orientations;
 
-modelFun = @(params, ori) params(1) .* sind(2*ori);
-% modelFun = @(params, ori) params(1) .* cosd(2*ori);
+% modelFun = @(params, ori) params(1) .* sind(2*ori);
+modelFun = @(params, ori) params(1) .* sind(4*ori);
 initParams = [ rand ];
 
 lb = [ 0 ];  % optional lower bounds
@@ -1092,7 +1092,7 @@ figure
 subplot(2, 2, 1)
 hold on
 scatter(orientations, bias)
-plot(orientations, b_est .* sind(2*orientations))
+plot(orientations, b_est .* sind(4*orientations))
 hold off
 xlabel("Orientation")
 ylabel("Mean error")
@@ -1153,7 +1153,7 @@ for i=1:n_uncertainty_levels
     initParams = [mean(stdByOri(i, :)), 1];
     
     lb = [0 0];  % optional lower bounds
-    ub = [ Inf  Inf];  % optional upper bounds
+    ub = [ Inf  Inf Inf In];  % optional upper bounds
     
     params_est = lsqcurvefit(modelFun, initParams, ...
                              orientations', stdByOri(i, :), ...
@@ -1161,13 +1161,13 @@ for i=1:n_uncertainty_levels
     
     b_est = params_est(1);
     a_est = params_est(2);
-    %c_est = params_est(3);
-    %d_est = params_est(4);
+    c_est = params_est(3);
+    d_est = params_est(4);
 
     bs(i) = b_est;
     as(i) = a_est;
-    %cs(i) = c_est;
-    %ds(i) = d_est;
+    cs(i) = c_est;
+    ds(i) = d_est;
     
     subplot(2, 3, i)
     hold on

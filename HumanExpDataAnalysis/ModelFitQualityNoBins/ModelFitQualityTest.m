@@ -25,17 +25,18 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 % expData            = load('../Data/COR33.mat');   % Akash
 % expData            = load('../Data/COR31.mat');   % Tien
 % expData            = load('./Data/COR32.mat');    % Jiaming
-expData            = load('../Data/CORNFB02.mat');  % Jonathan
+% expData            = load('../Data/CORNFB02.mat');  % Jonathan
 % expData            = load('../Data/CORNFB01.mat');  % Yichao
+expData            = load('../Data/CORNFB03.mat');  % David
 % For subject 6 => David: make sure to change the orientation dependent
 % error
 
 fltSessionIdx = [0, 0, 0, 0, 2, 1]; % Last one is for David
-fltData       = expData.dat( expData.dat.session > 2 , :);  % TODO: change session number
+fltData       = expData.dat( expData.dat.session > 1 , :);  % TODO: change session number
 f.dat         = fltData;
 formattedData = formatExpData(f, false, false); % no de-baising, work with raw errors
 
-initCond             = getInitialConditions(formattedData);
+initCond             = getInitialConditions(formattedData, false); % boundaryEffect = false
 n_uncertainty_levels = formattedData.n_uncertainty_levels; % Hard code for now
 %% Cov model
 
@@ -46,8 +47,8 @@ optParams.nStarts = 30; %300;
 resultFullCov = Optimize(formattedData, initCond, modelType, [], optParams, "full");
 
 %%
-modelType = "cov";
-load("Yichao_cov_fit.mat", "resultFullCov");
+% modelType = "cov";
+% load("Yichao_cov_fit.mat", "resultFullCov");
 
 paramsNameCov = ["sigma_s L1",...
     "sigma_s L2", ...
@@ -68,7 +69,7 @@ paramsNameCov = ["sigma_s L1",...
 [~,idx] = min(resultFullCov.f);
 fitParams = resultFullCov.x(idx, :);
 for i=1:numel(fitParams)
-    fprintf("%s, Fit: %.4f \n", paramsNameCov(i), fitParams(i))
+    fprintf("%s, Fit: %.7f \n", paramsNameCov(i), fitParams(i))
 end
 
 % NLL computed using binned method
@@ -77,6 +78,11 @@ nll_binned_method = trlNLLs;
 
 fprintf("\n\nNLL (fit) %.4f, NLL (binned method): %.4f) \n\n", ...
     resultFullCov.f(idx), sum(nll_binned_method));
+
+%David
+% cov: 8241.4146
+% ind: 8249
+% SS: 8268.9515
 
 % Tien
 % COV: 8796.4678, 8784.5232, 8767.9746 (GR 0.15, 1)
