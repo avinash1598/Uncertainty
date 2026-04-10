@@ -6,12 +6,19 @@ restoredefaultpath
 warning("Make sure generative model is correct. While generating simulated " + ...
     "data guess rate should only be used for low confidence reports.")
 
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/LLScriptsNoBin/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/OptimizationScriptsNoBin')
-addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/SimulationScripts/CompleteModelEstimation/GenerateSimulatedData')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/HumanExpDataAnalysis/Utils/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/LLScriptsUtils/LLScriptsNoBin/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/PlotUtils/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/Utils/')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/OptimizationScriptsNoBin')
+% addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/SimulationScripts/CompleteModelEstimation/GenerateSimulatedData')
+
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\HumanExpDataAnalysis\Utils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\LLScriptsUtils\LLScriptsNoBin\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\PlotUtils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\Utils\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\OptimizationUtils\OptimizationScriptsNoBin\')
+addpath('C:\Users\avinash1598\Desktop\Uncertainty\SimulationScripts\CompleteModelEstimation\GenerateSimulatedData')
 
 dataFileName  = ["COR31.mat", "COR33.mat", "CORNFB01.mat", "CORNFB02.mat", "CORNFB03.mat"];
 subjects      = ["Tien", "Akash", "Yichao", "Jonathan", "David"];
@@ -34,18 +41,23 @@ for i = 1:numel(subjects)
     fltData       = expData.dat( expData.dat.session > fltSessionIdx(i) , :);  % TODO: change session number
     f.dat         = fltData;
     formattedData = formatExpData(f, false, false); % no de-baising, work with raw errors
-
-    initCond             = getInitialConditions(formattedData);
+    
+    % For david initial conditions are different
+    if subjects(i) == "David"
+        initCond             = getInitialConditions(formattedData, false); % boundaryEffect = false
+    else
+        initCond             = getInitialConditions(formattedData); % boundaryEffect = true
+    end
     n_uncertainty_levels = formattedData.n_uncertainty_levels; % Hard code for now
-
+    
     % Optimize
     for mIdx = 1:numel(modelTypes)
         fprintf("Optimizing Subject: %s, Model Type: %s", subjects(i), modelTypes(mIdx))
 
         modelType = modelTypes(mIdx);
-        optParams.nStarts = 30;
+        optParams.nStarts = 100;
         result = Optimize(formattedData, initCond, modelType, [], optParams, "full");
-
+        
         [nll,idx] = min(result.f);
         fitParams = result.x(idx, :);
         
