@@ -22,10 +22,10 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 
 load("fitResultsAllSubjects.mat");
 
-dataFileName  = ["COR31.mat", "COR33.mat", "CORNFB01.mat", "CORNFB02.mat"];
-subjects      = ["Tien", "Akash", "Yichao", "Jonathan"];
+dataFileName  = ["COR31.mat", "COR33.mat", "CORNFB01.mat", "CORNFB02.mat", "CORNFB03.mat"]; % 
+subjects      = ["Tien", "Akash", "Yichao", "Jonathan", "David"]; %
 modelTypes    = ["cov", "ind", "singlyStochastic"];
-fltSessionIdx = [0, 0, 0, 2]; % Last one is for David - 1
+fltSessionIdx = [0, 0, 0, 2, 1]; % Last one is for David - 1
 
 covNLLs = zeros(1, numel(subjects));
 indNLLs = zeros(1, numel(subjects));
@@ -66,7 +66,7 @@ bar(x, Y)
 legend({'cov','ind','SS'})
 xlabel("Subjects")
 ylabel("NLL")
-ylim([8400 max(Y(:))+100])
+ylim([8000 max(Y(:))+100])
 
 % Is Ind and Cov better than SS?
 subplot(2, 2, 2)
@@ -241,7 +241,7 @@ for i = 1:numel(subjects)
     x = linspace(0, m+4*s, 500);
     y = lognpdf(x, mu, sqrt(sigma2));
 
-    subplot(3, 4, 8+i)
+    subplot(4, 4, 8+i)
     % plot + shaded area
     plot(x,y,'LineWidth',2, HandleVisibility='off'); hold on
     area(x,y,'FaceAlpha',0.3,'EdgeColor','none', HandleVisibility='off'); 
@@ -303,7 +303,7 @@ for i = 1:numel(subjects)
     x = linspace(0, sqrt(m)+2*sqrt( sqrt(v) ), 500);
     y = lognpdf(x, mu, sqrt(sigma2));
     
-    subplot(3, 4, i)
+    subplot(4, 4, i)
     % plot + shaded area
     plot(x,y,'LineWidth',2, HandleVisibility='off'); hold on
     area(x,y,'FaceAlpha',0.3,'EdgeColor','none', HandleVisibility='off'); 

@@ -13,10 +13,10 @@ addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessMod
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/OptimizationUtils/OptimizationScriptsNoBin')
 addpath('/Users/avinashranjan/Desktop/UT Austin/Goris lab/Uncertainty/ProcessModel/SimulationScripts/CompleteModelEstimation/GenerateSimulatedData')
 
-dataFileName  = ["COR31.mat", "COR33.mat", "CORNFB01.mat", "CORNFB02.mat"];
-subjects      = ["Tien", "Akash", "Yichao", "Jonathan"];
+dataFileName  = ["COR31.mat", "COR33.mat", "CORNFB01.mat", "CORNFB02.mat", "CORNFB03.mat"];
+subjects      = ["Tien", "Akash", "Yichao", "Jonathan", "David"];
 modelTypes    = ["cov", "ind", "singlyStochastic"];
-fltSessionIdx = [0, 0, 0, 2]; % Last one is for David - 1
+fltSessionIdx = [0, 0, 0, 2, 1]; % Last one is for David - 1
 
 %%
 fitResults = {};
